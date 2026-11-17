@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Id": "org.cyberneon.wallpaper",
+        "Name": "CyberNeon Live",
+        "Description": "Animated netrunner wallpaper: scan line, rotating rings, blinking network, data packets, glitches. Fan made, inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0",
+        "Icon": "preferences-desktop-wallpaper"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

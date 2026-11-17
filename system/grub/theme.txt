@@ -1,0 +1,61 @@
+# CyberNeon netrunner GRUB theme (original)
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#070d1a"
+terminal-font: "Chakra Petch Regular 18"
+terminal-box: "terminal_box_*.png"
+terminal-left: "10%"
+terminal-top: "10%"
+terminal-width: "80%"
+terminal-height: "80%"
+
++ label {
+    left = 12%
+    top = 18%
+    width = 60%
+    align = "left"
+    text = "// SELECT BOOT TARGET"
+    font = "Chakra Petch Bold 28"
+    color = "#ff2a4f"
+}
+
++ boot_menu {
+    left = 12%
+    top = 26%
+    width = 46%
+    height = 46%
+    menu_pixmap_style = "menu_*.png"
+    item_font = "Chakra Petch Regular 22"
+    item_color = "#7eddd5"
+    selected_item_font = "Chakra Petch Bold 22"
+    selected_item_color = "#0b1620"
+    selected_item_pixmap_style = "select_*.png"
+    item_height = 44
+    item_padding = 14
+    item_spacing = 6
+    icon_width = 0
+    icon_height = 0
+    item_icon_space = 0
+    scrollbar = false
+}
+
++ label {
+    id = "__timeout__"
+    left = 12%
+    top = 75%
+    width = 46%
+    align = "left"
+    text = "AUTO-BOOT IN %d s"
+    font = "Chakra Petch Regular 22"
+    color = "#5beedc"
+}
+
++ label {
+    left = 12%
+    top = 80%
+    width = 60%
+    align = "left"
+    text = "[ENTER] boot   [E] edit   [C] console"
+    font = "Chakra Petch Regular 18"
+    color = "#2a8f86"
+}

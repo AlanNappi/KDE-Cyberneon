@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.cyberneon.clock",
+        "Name": "CyberNeon Clock",
+        "Description": "Big neon desktop clock. Fan made, inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Category": "Date and Time",
+        "Icon": "preferences-system-time",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

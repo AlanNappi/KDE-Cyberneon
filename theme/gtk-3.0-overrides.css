@@ -1,0 +1,293 @@
+/* =====================================================================
+ * CyberNeon "netrunner" overrides (appended to recolored Pocillo-dark)
+ * ===================================================================== */
+@define-color cy #5beedc;
+@define-color cy_txt #7eddd5;
+@define-color red #ff2a4f;
+@define-color red_dim #8c1a33;
+@define-color red_hot #ff8fa3;
+@define-color navy #111e29;
+@define-color navy_deep #070d1a;
+@define-color view_bg #0b1620;
+
+/* ---------------- links ---------------- */
+*:link, button:link, link { color: @cy; }
+*:visited, button:visited, link:visited { color: #ff6b81; }
+
+/* ---------------- server-side frames (budgie-wm) ---------------- */
+/* The frame's padding becomes the visible border; the decoration background paints
+ * the red border (and the strip under the titlebar) with one 45deg cut that runs
+ * through border and titlebar together. */
+.ssd decoration {
+  border: none;
+  border-radius: 0;
+  padding: 0 4px;
+  background-color: transparent;
+  background-image: linear-gradient(135deg, transparent 15px, @red 15px);
+  /* bottom border as a solid (unblurred) shadow: frame padding at the bottom would shift mutter's buttons up */
+  box-shadow: 0 6px 0 0 @red;
+}
+.ssd decoration:backdrop {
+  background-image: linear-gradient(135deg, transparent 15px, @red_dim 15px);
+  box-shadow: 0 6px 0 0 @red_dim;
+}
+.ssd decoration.maximized, .ssd.maximized decoration,
+.ssd decoration.tiled, .ssd.tiled decoration,
+.ssd decoration.fullscreen, .ssd.fullscreen decoration {
+  padding: 0;
+  box-shadow: none;
+  background-image: none;
+  background-color: @red;
+}
+.ssd decoration.maximized:backdrop, .ssd decoration.tiled:backdrop {
+  background-color: @red_dim;
+}
+
+/* titlebar: red strip with a 45deg cut on the top-left corner */
+.ssd headerbar.titlebar, headerbar.titlebar.default-decoration {
+  min-height: 0;
+  padding: 0 4px 0 18px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: transparent;
+  background-image: linear-gradient(135deg, transparent 12px, @red 12px);
+  color: @navy;
+}
+.ssd headerbar.titlebar:backdrop, headerbar.titlebar.default-decoration:backdrop {
+  background-image: linear-gradient(135deg, transparent 12px, @red_dim 12px);
+  color: rgba(17, 30, 41, 0.85);
+}
+.ssd headerbar.titlebar.maximized, .ssd headerbar.titlebar.tiled {
+  background-image: none;
+  background-color: @red;
+}
+/* server-side titlebar: transparent, the red comes from the decoration (so the cut is continuous) */
+.ssd headerbar.titlebar, .ssd headerbar.titlebar:backdrop,
+.ssd headerbar.titlebar.maximized, .ssd headerbar.titlebar.tiled,
+.ssd headerbar.titlebar.maximized:backdrop, .ssd headerbar.titlebar.tiled:backdrop {
+  background-image: none;
+  background-color: transparent;
+}
+.ssd headerbar.titlebar.maximized:backdrop, .ssd headerbar.titlebar.tiled:backdrop {
+  background-color: transparent;
+}
+.ssd headerbar.titlebar .title, headerbar.default-decoration .title {
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 700;
+  font-size: 9pt;
+  color: @navy;
+}
+.ssd headerbar.titlebar button.titlebutton, headerbar.default-decoration button.titlebutton {
+  /* the button fills the whole titlebar height (mutter top-aligns buttons);
+   * the outlined square is a centred background so it looks vertically centred */
+  min-height: 1px;
+  min-width: 22px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: transparent;
+  background-image: linear-gradient(@red, @red), linear-gradient(@navy, @navy);
+  /* mutter makes the button rect as tall as the titlebar (= title text height, 19px) */
+  background-size: 9px 9px, 13px 13px;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  color: @navy;
+}
+.ssd headerbar.titlebar button.titlebutton:backdrop, headerbar.default-decoration button.titlebutton:backdrop {
+  background-image: linear-gradient(@red_dim, @red_dim), linear-gradient(@navy, @navy);
+}
+.ssd headerbar.titlebar button.titlebutton:hover, headerbar.default-decoration button.titlebutton:hover {
+  background-color: transparent;
+  background-image: linear-gradient(@navy, @navy), linear-gradient(@navy, @navy);
+  color: @cy;
+}
+.ssd headerbar.titlebar button.titlebutton.close:hover, headerbar.default-decoration button.titlebutton.close:hover {
+  background-color: transparent;
+  background-image: linear-gradient(@navy, @navy), linear-gradient(@navy, @navy);
+  color: @red;
+  box-shadow: none;
+}
+
+/* ---------------- client-side decorated windows ---------------- */
+.csd decoration {
+  border-radius: 0;
+  box-shadow: 0 0 0 3px @red, 0 0 16px 4px alpha(@red, 0.5);
+}
+.csd decoration:backdrop {
+  box-shadow: 0 0 0 3px @red_dim, 0 0 10px 1px alpha(@red, 0.18);
+}
+.csd.maximized decoration, .csd.fullscreen decoration, .csd.tiled decoration,
+.csd.tiled-top decoration, .csd.tiled-left decoration, .csd.tiled-right decoration, .csd.tiled-bottom decoration {
+  box-shadow: none;
+}
+
+.titlebar, headerbar {
+  background-color: @navy;
+  border-radius: 0;
+  color: @cy;
+  box-shadow: inset 0 3px @red, inset 0 9px 8px -6px alpha(@red, 0.45), inset 0 -1px alpha(@cy, 0.25);
+}
+.titlebar:backdrop, headerbar:backdrop {
+  background-color: @navy;
+  box-shadow: inset 0 3px @red_dim, inset 0 -1px alpha(@cy, 0.12);
+}
+headerbar .title, .titlebar .title {
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 700;
+  color: @cy;
+}
+headerbar .subtitle { color: alpha(@cy, 0.7); }
+headerbar button.titlebutton.close:hover, .titlebar button.titlebutton.close:hover {
+  background-color: @red;
+  color: @navy;
+}
+
+/* ---------------- buttons: cyan outlines ---------------- */
+button {
+  border-radius: 0;
+  color: @cy;
+  background-color: alpha(@cy, 0.04);
+  box-shadow: inset 0 0 0 1px alpha(@cy, 0.55);
+}
+button:hover {
+  background-color: alpha(@cy, 0.12);
+  box-shadow: inset 0 0 0 1px @cy;
+}
+button:active, button:checked {
+  background-color: alpha(@cy, 0.22);
+  box-shadow: inset 0 0 0 1px @cy;
+}
+button:disabled {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1px alpha(@cy, 0.2);
+  color: alpha(@cy, 0.35);
+}
+button.flat, button.flat:disabled { box-shadow: none; background-color: transparent; }
+button.flat:hover { box-shadow: none; background-color: alpha(@cy, 0.10); }
+button.flat:checked, button.flat:active { box-shadow: none; background-color: alpha(@cy, 0.18); }
+button.suggested-action { background-color: @cy; color: @navy; box-shadow: none; }
+button.suggested-action:hover { background-color: #8af7ea; }
+button.destructive-action { background-color: @red; color: @navy; box-shadow: none; }
+button.destructive-action:hover { background-color: #ff5a6d; }
+.linked > button, .linked > button:first-child, .linked > button:last-child,
+.linked.vertical > button, .linked.vertical > button:first-child, .linked.vertical > button:last-child {
+  border-radius: 0;
+}
+
+/* entries */
+entry, spinbutton:not(.vertical) {
+  border-radius: 0;
+  background-color: @view_bg;
+  box-shadow: inset 0 0 0 1px alpha(@cy, 0.45);
+}
+entry:focus, spinbutton:focus:not(.vertical) { box-shadow: inset 0 0 0 1px @cy; }
+
+/* views & sidebars */
+.view, iconview, textview text, treeview.view { background-color: @view_bg; }
+.sidebar, placessidebar, .nemo-places-sidebar { background-color: @navy; }
+
+/* tooltips */
+tooltip { border-radius: 0; }
+tooltip.background {
+  background-color: rgba(11, 22, 32, 0.97);
+  color: @cy;
+  border: 1px solid alpha(@cy, 0.75);
+}
+tooltip.csd decoration { border-radius: 0; }
+
+/* menus & popovers */
+menu, .menu, .context-menu { border: 1px solid alpha(@cy, 0.5); border-radius: 0; }
+popover.background { border: 1px solid alpha(@cy, 0.5); border-radius: 0; }
+
+/* scrollbars */
+scrollbar slider { background-color: alpha(@cy, 0.45); border-radius: 0; }
+scrollbar slider:hover { background-color: alpha(@cy, 0.75); }
+scrollbar slider:active { background-color: @cy; }
+
+/* =====================================================================
+ * Budgie
+ * ===================================================================== */
+.budgie-panel {
+  background-color: @navy;
+  color: @cy;
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 600;
+}
+.budgie-panel.transparent { background-color: @navy; }
+
+/* top bar: red underline + red block that continues the dock bar */
+.top .budgie-panel {
+  background-image: linear-gradient(to right, transparent 76px, @red 76px, @red 110px, transparent 110px);
+  box-shadow: inset 0 -2px @red_hot, inset 0 -4px @red, inset 0 -14px 12px -8px alpha(@red, 0.55);
+}
+/* dock: navy with a thick red bar on its right edge */
+.left .budgie-panel   { box-shadow: inset -6px 0 @red_hot, inset -14px 0 @red, inset -24px 0 14px -10px alpha(@red, 0.6); }
+.right .budgie-panel  { box-shadow: inset 14px 0 @red; }
+.bottom .budgie-panel { box-shadow: inset 0 4px @red; }
+.shadow-block { background-color: transparent; }
+.top .shadow-block  { background-image: linear-gradient(to bottom, alpha(@red, 0.6), alpha(@red, 0)); }
+.left .shadow-block { background-image: linear-gradient(to right, alpha(@red, 0.6), alpha(@red, 0)); }
+
+.budgie-panel button,
+.budgie-panel button:hover, .budgie-panel button:active,
+.budgie-panel button:checked, .budgie-panel button:disabled {
+  box-shadow: none;
+  border-radius: 0;
+}
+.budgie-panel button { color: @cy; background-color: transparent; }
+.budgie-panel button:hover, .budgie-panel button:drop(active), .budgie-panel button:focus {
+  color: #9ff0e8;
+  background-color: alpha(@cy, 0.10);
+}
+.budgie-panel button:checked {
+  color: @cy;
+  background-color: alpha(@cy, 0.16);
+}
+.budgie-panel button:checked:hover, .budgie-panel button:checked:focus {
+  color: #9ff0e8;
+  background-color: alpha(@cy, 0.24);
+}
+.budgie-panel button.flat.launcher:not(:checked) { color: @cy; }
+.budgie-panel .alert { color: @red; }
+.budgie-panel separator { background-color: alpha(@cy, 0.35); }
+.left .budgie-panel #tasklist-button, .left .budgie-panel button.flat.launcher { min-height: 54px; }
+
+/* popovers from the panel */
+.budgie-popover {
+  background-color: @navy;
+  border-color: @red;
+  border-width: 2px;
+  border-radius: 0;
+  box-shadow: 0 0 14px 2px alpha(@red, 0.45);
+}
+.budgie-popover.budgie-menu entry.search { border-bottom: 1px solid alpha(@cy, 0.5); }
+.budgie-popover button.flat:not(.image-button) { color: @cy_txt; }
+.budgie-popover button.flat:not(.image-button):hover { color: @cy; }
+
+/* Raven */
+.raven {
+  background-color: @navy;
+  box-shadow: inset 4px 0 @red, inset 14px 0 12px -8px alpha(@red, 0.45);
+}
+.raven-header { color: @cy; }
+
+/* notifications, OSD, switcher */
+.budgie-notification-window, .budgie-switcher-window, .budgie-osd-window {
+  background-color: @navy;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 2px @red, inset 0 0 14px alpha(@red, 0.45);
+  color: @cy_txt;
+}
+.budgie-notification .notification-title, .budgie-switcher .notification-title {
+  color: @cy;
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 700;
+}
+.budgie-notification .notification-body { color: @cy_txt; }
+.budgie-osd .budgie-osd-text { color: @cy; font-family: "Chakra Petch", sans-serif; font-weight: 700; }
+
+/* dock: keep the applets clear of the red bar */
+.left .budgie-panel > box  { margin-right: 14px; }
+.right .budgie-panel > box { margin-left: 14px; }

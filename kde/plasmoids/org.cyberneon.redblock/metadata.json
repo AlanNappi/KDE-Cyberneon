@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.cyberneon.redblock",
+        "Name": "CyberNeon Red Block",
+        "Description": "Neon red block that joins the dock bar and the top bar. Fan made, inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Category": "Miscellaneous",
+        "Icon": "color-picker",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

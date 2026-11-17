@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "KWin/Effect",
+    "KPlugin": {
+        "Id": "cyberneon_glitch",
+        "Name": "CyberNeon Glitch",
+        "Description": "Windows open and close with a short neon flicker and a lateral glitch jump. Fan made, inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Category": "Appearance",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0",
+        "EnabledByDefault": false
+    },
+    "X-KDE-Ordering": 60,
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js",
+    "X-KWin-Exclusive-Category": "toplevel-open-close-animation"
+}

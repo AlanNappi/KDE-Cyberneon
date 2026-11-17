@@ -1,0 +1,31 @@
+/* CyberNeon palette for libadwaita apps */
+@define-color accent_color #5beedc;
+@define-color accent_bg_color #2a8f86;
+@define-color accent_fg_color #0b1620;
+@define-color destructive_color #ff2a4f;
+@define-color destructive_bg_color #ff2a4f;
+@define-color destructive_fg_color #0b1620;
+@define-color success_color #2ef2a8;
+@define-color warning_color #fcee0a;
+@define-color error_color #ff2a4f;
+@define-color window_bg_color #0f1b26;
+@define-color window_fg_color #7eddd5;
+@define-color view_bg_color #0b1620;
+@define-color view_fg_color #7eddd5;
+@define-color headerbar_bg_color #111e29;
+@define-color headerbar_fg_color #5beedc;
+@define-color headerbar_backdrop_color #111e29;
+@define-color sidebar_bg_color #111e29;
+@define-color sidebar_fg_color #7eddd5;
+@define-color secondary_sidebar_bg_color #0f1b26;
+@define-color card_bg_color rgba(91, 238, 220, 0.05);
+@define-color card_fg_color #7eddd5;
+@define-color dialog_bg_color #111e29;
+@define-color dialog_fg_color #7eddd5;
+@define-color popover_bg_color #111e29;
+@define-color popover_fg_color #7eddd5;
+@define-color thumbnail_bg_color #111e29;
+headerbar { box-shadow: inset 0 3px #ff2a4f; }
+window.csd { box-shadow: 0 0 0 3px #ff2a4f, 0 6px 18px rgba(0,0,0,0.55); border-radius: 0; }
+window.csd:backdrop { box-shadow: 0 0 0 3px #8c1a33, 0 3px 10px rgba(0,0,0,0.45); }
+window.csd.maximized, window.csd.fullscreen, window.csd.tiled { box-shadow: none; }

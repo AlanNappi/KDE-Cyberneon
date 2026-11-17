@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.cyberneon.hud",
+        "Name": "CyberNeon HUD",
+        "Description": "Netrunner system HUD (CPU, memory, disk). Fan made, inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Category": "System Information",
+        "Icon": "utilities-system-monitor",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

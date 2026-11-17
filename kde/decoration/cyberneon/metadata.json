@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "KWin/Decoration",
+    "KPlugin": {
+        "Id": "kwin4_decoration_qml_cyberneon",
+        "Name": "CyberNeon",
+        "Description": "Fan-made netrunner window decoration (45deg cut frame, neon core, HUD details). Inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "1.0"
+    }
+}
