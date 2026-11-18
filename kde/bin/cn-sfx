@@ -1,0 +1,22 @@
+#!/bin/bash
+# CyberNeon: plays one sound of the CyberNeon sound theme (SOUND_FX="yes" in cyberneon.conf).
+#   cn-sfx NAME     e.g. message-new-instant, dialog-warning, desktop-login
+# Notification sounds respect Do Not Disturb and are limited to one every 2 seconds.
+# FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
+name=${1:?usage: cn-sfx NAME}
+file="$HOME/.local/share/sounds/cyberneon/stereo/$name.wav"
+[ -f "$file" ] || exit 0
+
+if [ "$name" = message-new-instant ]; then
+    case $(busctl --user get-property org.freedesktop.Notifications /org/freedesktop/Notifications \
+               org.freedesktop.Notifications Inhibited 2>/dev/null) in "b true") exit 0 ;; esac
+    stamp="${XDG_RUNTIME_DIR:-/tmp}/cyberneon-sfx-last"
+    last=$(cat "$stamp" 2>/dev/null || echo 0)
+    [ $(( EPOCHSECONDS - last )) -ge 2 ] || exit 0
+    echo "$EPOCHSECONDS" > "$stamp"
+fi
+
+for player in pw-play paplay; do
+    command -v "$player" >/dev/null 2>&1 && exec "$player" "$file"
+done
+command -v canberra-gtk-play >/dev/null 2>&1 && exec canberra-gtk-play -f "$file"

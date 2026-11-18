@@ -26,6 +26,9 @@ else
     say "no pristine backup found: KDE settings are left as they are"
 fi
 
+# Plasma's own OSD comes back even if the saved settings had no plasmarc
+grep -qs '^\[OSD\]' "$P/config/plasmarc" || kwriteconfig6 --file plasmarc --group OSD --key Enabled --delete 2>/dev/null || true
+
 say "removing CyberNeon files"
 for w in org.cyberneon.biomonitor org.cyberneon.radar org.cyberneon.chrono org.cyberneon.hud org.cyberneon.clock org.cyberneon.redblock; do kpackagetool6 -t Plasma/Applet -r "$w" >/dev/null 2>&1 || true; done
 rm -rf "$HOME/.local/share/kwin/decorations/kwin4_decoration_qml_cyberneon"
@@ -37,7 +40,8 @@ rm -rf "$HOME/.themes/CyberNeon" \
        "$HOME/.config/cyberneon" "$DATA/launcher-logo.png" "$HOME/.config/Kvantum/CyberNeon" \
        "$HOME/.local/share/plasma/wallpapers/org.cyberneon.wallpaper" \
        "$HOME/.local/share/plasma/look-and-feel/org.cyberneon.desktop" "$HOME/.local/share/kwin/effects/cyberneon_glitch" \
-       "$HOME/.local/share/kwin/tabbox/cyberneon"
+       "$HOME/.local/share/kwin/tabbox/cyberneon" "$DATA/bin" "$DATA/system/terminal-plate.png" \
+       "$HOME/.local/share/sounds/cyberneon" "$HOME/.config/autostart/cyberneon-jackin.desktop"
 [ -L "$HOME/.icons/CyberNeon-Cursors" ] && rm -f "$HOME/.icons/CyberNeon-Cursors"
 grep -q 'Inherits=CyberNeon-Cursors' "$HOME/.icons/default/index.theme" 2>/dev/null && rm -f "$HOME/.icons/default/index.theme"
 grep -q '^Icon=firefox$' "$HOME/.local/share/applications/firefox_firefox.desktop" 2>/dev/null \

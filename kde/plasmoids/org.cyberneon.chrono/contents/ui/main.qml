@@ -1,6 +1,6 @@
 // CyberNeon Chrono - bottom-right HUD counter for Plasma 6 (X11 and Wayland). Original artwork.
 // The time is shown like a magazine counter: HH:MM as the count, the seconds left in the minute as the reserve,
-// and 60 ticks that deplete every minute (last ten in red). Short RGB-split glitch every ~12 s.
+// and 60 ticks that deplete every minute (last ten in red). Short RGB-split glitch every ~12 s, every 2.5 s in alert mode.
 // FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
 import QtQuick
 import QtQuick.Shapes
@@ -20,7 +20,8 @@ PlasmoidItem {
     preferredRepresentation: fullRepresentation
 
     Timer { interval: 1000; running: true; repeat: true; triggeredOnStart: true; onTriggered: root.now = new Date() }
-    Timer { interval: 12000; running: true; repeat: true; onTriggered: { root.glitching = true; glitchOff.restart() } }
+    CyberNeonReactor { id: reactor }
+    Timer { interval: reactor.alert ? 2500 : 12000; running: true; repeat: true; onTriggered: { root.glitching = true; glitchOff.restart() } }
     Timer { id: glitchOff; interval: 140; onTriggered: root.glitching = false }
 
     fullRepresentation: Item {

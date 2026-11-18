@@ -1,0 +1,6 @@
+#!/bin/bash
+# CyberNeon: active profile of the TUXEDO Control Center, read-only, as busctl JSON.
+# Prints nothing when the Control Center is not there: the Biomonitor then shows nothing about it.
+# FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
+exec busctl --system --auto-start=no --timeout=2 --json=short call com.tuxedocomputers.tccd \
+    /com/tuxedocomputers/tccd com.tuxedocomputers.tccd GetActiveProfileJSON 2>/dev/null

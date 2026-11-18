@@ -174,18 +174,19 @@ Rectangle {
     }
 
     component CutField: Shape {
+        id: cutField
         property bool focused: false
         preferredRendererType: Shape.CurveRenderer
         ShapePath {
             fillColor: Qt.rgba(0.043, 0.086, 0.125, 0.9)
-            strokeColor: parent.focused ? root.cy : Qt.rgba(0.36, 0.93, 0.86, 0.45)
-            strokeWidth: parent.focused ? 2 : 1
+            strokeColor: cutField.focused ? root.cy : Qt.rgba(0.36, 0.93, 0.86, 0.45)
+            strokeWidth: cutField.focused ? 2 : 1
             joinStyle: ShapePath.MiterJoin
             startX: 0.5; startY: 0.5
-            PathLine { x: parent.width - 0.5; y: 0.5 }
-            PathLine { x: parent.width - 0.5; y: parent.height - 10 }
-            PathLine { x: parent.width - 10; y: parent.height - 0.5 }
-            PathLine { x: 0.5; y: parent.height - 0.5 }
+            PathLine { x: cutField.width - 0.5; y: 0.5 }
+            PathLine { x: cutField.width - 0.5; y: cutField.height - 10 }
+            PathLine { x: cutField.width - 10; y: cutField.height - 0.5 }
+            PathLine { x: 0.5; y: cutField.height - 0.5 }
             PathLine { x: 0.5; y: 0.5 }
         }
     }

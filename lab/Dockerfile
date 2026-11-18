@@ -13,6 +13,8 @@ RUN pacman -Sy --noconfirm --needed xorg-server-xvfb xorg-xwd imagemagick && pac
 RUN pacman -Sy --noconfirm --needed kdeplasma-addons && pacman -Scc --noconfirm
 # Kvantum (Qt widget style used by the CyberNeon Kvantum theme)
 RUN pacman -Sy --noconfirm --needed kvantum && pacman -Scc --noconfirm
+# Fake battery and TUXEDO Control Center on a private bus (reactive HUD tests)
+RUN pacman -Sy --noconfirm --needed python-dbusmock && pacman -Scc --noconfirm
 RUN useradd -m -s /bin/bash netrunner
 USER netrunner
 WORKDIR /home/netrunner

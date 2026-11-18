@@ -1,0 +1,57 @@
+#!/bin/bash
+# CyberNeon: data for the terminal in the live wallpaper. Prints, one per line:
+#   C|TAG|PORT|SERVICE|PROCESS      active network connection
+#   J|HH:MM:SS|PRIORITY|PROGRAM|TAG recent journal entry
+#   R|DOWN|UP                       traffic since the previous call, bytes per second
+# The wallpaper can end up in screenshots, so nothing sensitive leaves this script: addresses become salted tags that
+# change at every boot, and journal messages are never read into the output (only time, priority and program name).
+# FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
+export LC_ALL=C
+salt=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null)
+
+tag() { local n _; read -r n _ < <(printf '%s%s' "$salt" "$1" | cksum); printf "%0$2X" $(( n & (16 ** $2 - 1) )); }
+service() {
+    case $1 in
+        443|8443) echo HTTPS ;; 80|8080) echo HTTP ;; 22) echo SSH ;; 53|853) echo DNS ;;
+        25|110|143|465|587|993|995) echo MAIL ;; 1194|51820) echo VPN ;; 6667|6697) echo IRC ;; *) echo TCP ;;
+    esac
+}
+
+# traffic on the real interfaces (virtual ones would count the same bytes twice)
+rx=0; tx=0
+while IFS= read -r line; do
+    iface=${line%%:*}; iface=${iface// /}
+    case $iface in lo|docker*|br-*|veth*|virbr*|vnet*|tun*|tap*|wg*) continue ;; esac
+    read -r -a f <<< "${line#*:}"
+    rx=$(( rx + f[0] )); tx=$(( tx + f[8] ))
+done < <(tail -n +3 /proc/net/dev)
+state="${XDG_RUNTIME_DIR:-/tmp}/cyberneon-netlog"
+read -r t0 rx0 tx0 2>/dev/null < "$state"
+dt=$(( EPOCHSECONDS - ${t0:-0} ))
+if [ -n "${t0:-}" ] && [ "$dt" -ge 1 ] && [ "$rx" -ge "$rx0" ] && [ "$tx" -ge "$tx0" ]; then
+    echo "R|$(( (rx - rx0) / dt ))|$(( (tx - tx0) / dt ))"
+fi
+[ "$dt" -ge 1 ] && echo "$EPOCHSECONDS $rx $tx" > "$state"
+
+shown=0; seen=" "
+while read -r _ _ _ peer rest; do
+    ip=${peer%:*}; port=${peer##*:}; ip=${ip#[}; ip=${ip%]}; ip=${ip#::ffff:}
+    case $ip in 127.*|::1|"") continue ;; esac
+    proc=unknown
+    [[ $rest =~ \(\(\"([^\"]+)\" ]] && proc=${BASH_REMATCH[1]//[^A-Za-z0-9._-]/}
+    key="$ip:$port:$proc"
+    case $seen in *" $key "*) continue ;; esac
+    seen="$seen$key "
+    echo "C|$(tag "$ip" 6)|$port|$(service "$port")|${proc:0:16}"
+    shown=$(( shown + 1 )); [ "$shown" -ge 4 ] && break
+done < <(ss -Htnp state established 2>/dev/null)
+
+journalctl -b -n 4 -o json --no-pager --output-fields=SYSLOG_IDENTIFIER,_COMM,PRIORITY 2>/dev/null |
+while IFS= read -r line; do
+    [[ $line =~ \"__REALTIME_TIMESTAMP\":\"([0-9]+)\" ]] || continue; us=${BASH_REMATCH[1]}
+    prio=6; [[ $line =~ \"PRIORITY\":\"([0-7])\" ]] && prio=${BASH_REMATCH[1]}
+    name=kernel
+    if [[ $line =~ \"SYSLOG_IDENTIFIER\":\"([^\"]+)\" ]] || [[ $line =~ \"_COMM\":\"([^\"]+)\" ]]; then name=${BASH_REMATCH[1]}; fi
+    name=${name//[^A-Za-z0-9._-]/}
+    printf 'J|%(%H:%M:%S)T|%s|%s|%s\n' $(( us / 1000000 )) "$prio" "${name:0:18}" "$(tag "$us" 4)"
+done

@@ -1,0 +1,1 @@
+../../../../shared/cnconfig.js

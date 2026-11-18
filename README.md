@@ -42,6 +42,7 @@ fotogramma dello schermo; gira anche dietro al login, alla splash e al blocco sc
 ## Indice
 
 - [L'HUD: quattro zone come nel gioco](#lhud-quattro-zone-come-nel-gioco)
+- [L'HUD reagisce al tuo PC](#lhud-reagisce-al-tuo-pc)
 - [Cosa include](#cosa-include)
 - [Requisiti](#requisiti)
 - [Installazione](#installazione)
@@ -69,8 +70,39 @@ questa **organizzazione** con elementi **disegnati da zero** che mostrano **dati
 | **In alto a sinistra** | salute, livello, risorse | pannello fluttuante col **logo** (apre le app) e i desktop virtuali; widget **Biomonitor**: badge "livello" = ore di accensione, barra a segmenti = **RAM libera** (con MB liberi/totali), blocchi = **CPU libera**, linea = **disco**, rete ▼▲, nome dell'operatore |
 | **In alto a destra** | minimappa con l'ora, missione attiva | pannello fluttuante con area di notifica, orologio, blocco/uscita; widget **Radar**: orologio a radar (il fascio ruota coi secondi, rombo rosso = ore, quadrato ciano = minuti, logo al centro) e **tracker degli obiettivi**: la finestra attiva è l'obiettivo, le altre aperte sono i sotto-obiettivi, più il numero del workspace |
 | **In basso al centro** | slot delle abilità | **dock** fluttuante a misura delle icone, con gli slot ad angoli tagliati (attivo = piastra ciano con tacca) |
-| **In basso a destra** | contatore munizioni | widget **Chrono**: l'ora come "contatore", i secondi rimasti come riserva e **60 tacche** che si svuotano a ogni minuto (le ultime dieci in rosso), glitch RGB ogni 12 s |
+| **In basso a destra** | contatore munizioni | widget **Chrono**: l'ora come "contatore", i secondi rimasti come riserva e **60 tacche** che si svuotano a ogni minuto (le ultime dieci in rosso), glitch RGB ogni 12 s (ogni 2,5 s in allerta) |
 | **In basso a sinistra** | messaggi e chiamate | le **notifiche** compaiono qui, in vetro con bordo rosso |
+
+## L'HUD reagisce al tuo PC
+
+![Modalità allerta](docs/kde-alert.gif)
+
+<sub>Modalità allerta con un vero carico sulla CPU: fotogrammi reali del laboratorio.</sub>
+
+| | |
+|---|---|
+| ![Allerta](docs/kde-alert.png) **Modalità allerta**: bordo del Biomonitor che pulsa, bordi dello schermo rossi, allarme dello sfondo acceso | ![Terminale live](docs/kde-live-terminal.png) **Terminale live** con indirizzi offuscati e avviso `trace program active` |
+| ![Quickhack OSD](docs/kde-osd.png) **OSD "Quickhack"** per volume, luminosità e altri messaggi di sistema | ![Batteria](docs/kde-battery.png) **CELL CHARGE**, risparmio animazioni e profilo del TUXEDO Control Center (batteria e Control Center simulati nel laboratorio) |
+
+- **Modalità allerta.** Se CPU o RAM superano l'85% (o CPU/GPU i 95 °C) per 3 secondi, il Biomonitor pulsa in rosso e scrive cosa è
+  in sovraccarico, sullo sfondo lampeggia `INTRUSION COUNTERMEASURES ARMED`, i glitch diventano frequenti e le finestre si aprono con
+  un glitch più forte e più lungo. Finisce dopo 6 secondi di carico tornato basso. La RAM non conta la cache, e i lampeggi restano
+  sotto i 2 al secondo. Soglie in `cyberneon.conf`.
+- **Terminale live.** Il terminale dello sfondo mostra connessioni di rete e attività recente del journal, con lo stesso aspetto di
+  prima. Se il traffico supera 5 MB/s compare `[WARN] trace program active` con il tempo trascorso.
+  **Privacy:** gli indirizzi diventano etichette che cambiano a ogni avvio e i messaggi del journal non vengono mai mostrati (solo
+  ora, gravità e nome del programma). I nomi dei programmi restano leggibili, anche negli screenshot: se non li vuoi,
+  `LIVE_TERMINAL="no"`. Sul blocco schermo, sul login e nella splash non compare nessun dato reale.
+- **OSD Quickhack.** Volume, microfono, luminosità, retroilluminazione tastiera, layout, touchpad, Wi-Fi, Bluetooth e profilo
+  energetico compaiono come una barra di upload sopra la dock, al posto dell'OSD di Plasma. La barra vive nel Biomonitor: se togli
+  quel widget, imposta `CYBER_OSD="no"` e rilancia `install.sh` per riavere l'OSD di Plasma.
+- **Suoni (facoltativi, `SOUND_FX="yes"`).** Un piccolo tema audio sintetico generato da Python: chirp basso sulle notifiche (rispetta
+  "Non disturbare"), avviso all'ingresso in allerta, jack-in all'avvio della sessione. Il login SDDM resta muto: lì il server audio
+  dell'utente non è ancora attivo, quindi il jack-in parte subito dopo l'accesso.
+- **Batteria.** Sui portatili compare **CELL CHARGE**. A batteria sotto il 20%, sfondo e radar smettono di animarsi e il terminale
+  smette di aggiornarsi, finché non ricarichi.
+- **TUXEDO Control Center.** Solo dove il Control Center è in esecuzione, la riga di stato del Biomonitor mostra il **profilo attivo**
+  (in sola lettura). Altrove non compare nulla e non viene fatto nient'altro.
 
 ## Cosa include
 
@@ -80,6 +112,7 @@ questa **organizzazione** con elementi **disegnati da zero** che mostrano **dati
 | **Cornici delle finestre (QML)** | Barra del titolo scura dentro un **tubo neon rosso** (taglio a 45° grande in alto a sinistra, piccolo in basso a destra) con un **vero alone sfocato dalla GPU** attorno alla finestra; linguetta rossa con i tre quadratini HUD, titolo ciano maiuscolo, pulsanti ad angolo tagliato che si illuminano. Quando la finestra prende il focus l'alone **si accende con un flicker** e un'**onda ciano** attraversa la barra. |
 | **Pannelli e popup in vetro** | Pannelli **fluttuanti** e menu, popup e notifiche in **vetro sfocato** con angoli tagliati e **alone neon** (disegnato da KWin come ombra, segue anche i tagli a 45°). Pulsanti, campi e selezioni delle liste di Plasma ad angoli tagliati. |
 | **Widget HUD** | **Biomonitor**, **Radar + tracker degli obiettivi**, **Chrono** (vedi sopra), tutti con bagliore GPU. |
+| **HUD reattivo** | Modalità allerta, terminale live, OSD Quickhack, suoni facoltativi, batteria e profilo TUXEDO ([dettagli](#lhud-reagisce-al-tuo-pc)). |
 | **Glitch delle finestre (shader GLSL)** | Effetto KWin con un **fragment shader**: all'apertura e alla chiusura la finestra si sdoppia in rosso/ciano, si spezza in strisce spostate, con scanline e lampi ciano, e si ricompone in ~0,4 s. Se gli shader non sono disponibili ripiega su flicker + scatto laterale. |
 | **Alt+Tab "target lock"** | Selettore di finestre con **anteprime dal vivo** in schede ad angoli tagliati; la finestra scelta ha il "lock" rosso (cornice spessa, staffe agli angoli, etichetta TARGET). |
 | **App Qt in vetro (Kvantum)** | Dolphin, Impostazioni e le altre app Qt con sfondo **semitrasparente sfocato**, pulsanti e campi ad angoli tagliati, menu rossi, barre a strisce. Konsole sfocata e semitrasparente. |
@@ -100,6 +133,8 @@ questa **organizzazione** con elementi **disegnati da zero** che mostrano **dati
   ```
   (i nomi dei pacchetti cambiano un po' tra distribuzioni). Senza Kvantum le app Qt usano Breeze con i colori CyberNeon
   e Dolphin diventa trasparente con una regola di KWin; senza kdeplasma-addons il lanciatore usa Kicker o Kickoff.
+- Per l'HUD reattivo: `busctl` (systemd) per l'OSD Quickhack, `ss` (iproute2) per il terminale live, `pw-play` o `paplay` per i suoni.
+  Se manca `busctl` resta l'OSD di Plasma.
 - Per il tema GRUB: `grub-mkfont` (o `grub2-mkfont`). Prima installazione: Internet per Papirus (~33 MB).
 
 ## Installazione
@@ -130,6 +165,13 @@ cd cyberneon-kde
 | `DECORATION` | `qml` | cornici: `qml` (alone neon, animazioni) o `svg` (Aurorae SVG, più semplice) |
 | `ANIMATED_WALLPAPER` | `yes` | sfondo animato (anche sul blocco schermo) o immagine statica (`no`) |
 | `GLITCH_EFFECT` | `yes` | glitch GPU all'apertura/chiusura delle finestre |
+| `REACTIVE_HUD` | `yes` | modalità allerta in base al carico reale |
+| `ALERT_CPU`, `ALERT_RAM`, `ALERT_TEMP` | `85`, `85`, `95` | soglie dell'allerta: % CPU, % RAM (cache esclusa), °C di CPU/GPU |
+| `LIVE_TERMINAL` | `yes` | dati reali e offuscati nel terminale dello sfondo |
+| `TRACE_MBPS` | `5` | MB/s di traffico oltre cui compare `trace program active` |
+| `CYBER_OSD` | `yes` | OSD Quickhack al posto di quello di Plasma |
+| `SOUND_FX` | `no` | tema audio sintetico e jack-in all'avvio della sessione |
+| `LOW_POWER_PERCENT` | `20` | a batteria sotto questa soglia le animazioni si fermano (`0` = mai) |
 | `DOLPHIN_OPACITY` | `90` | opacità di Dolphin (regola KWin) usata **solo senza Kvantum** |
 | `PINNED` | impostazioni, file manager, browser, Konsole, LibreOffice Calc | app nella dock (sintassi di Plasma) |
 | `UI_FONT`, `FIXED_FONT`, `TITLE_FONT` | Chakra Petch 10 / JetBrainsMono Nerd Font 10 / Chakra Petch Bold 10 | font |
@@ -147,7 +189,8 @@ cd cyberneon-kde
 7. **Sfondo animato**, **tema globale + splash**, **blocco schermo** sullo sfondo animato, **Alt+Tab** (`~/.local/share/kwin/tabbox/cyberneon`),
    **glitch GPU** (caricato subito via D-Bus), sfocatura e contrasto di KWin attivi.
 8. **Konsole**, impostazioni **GTK**, **prompt** bash; regola di trasparenza per Dolphin solo senza Kvantum.
-9. **Widget HUD** (`kpackagetool6`), notifiche in basso a sinistra.
+9. **Widget HUD** (`kpackagetool6`), notifiche in basso a sinistra, **OSD Quickhack** (disattiva quello di Plasma in `plasmarc`),
+   script di supporto in `~/.local/share/cyberneon/bin` e, con `SOUND_FX="yes"`, tema audio in `~/.local/share/sounds/cyberneon`.
 10. **Layout HUD** (`kde/layout.js`): i tre pannelli fluttuanti, sfondo, Biomonitor, Radar e Chrono; pannelli in vetro.
 11. **Ricarica** di KWin e riavvio di plasmashell.
 
@@ -173,7 +216,9 @@ Annulla: `sudo cp /etc/default/grub.bak-cyberneon /etc/default/grub` e rigenera 
 4. le finestre hanno l'alone rosso; cliccandole l'alone si riaccende con un flicker;
 5. apri e chiudi una finestra: glitch rosso/ciano;
 6. Alt+Tab: schede con anteprime e "TARGET" rosso sulla finestra scelta;
-7. blocco schermo (Meta+L): lo sfondo animato è anche lì.
+7. blocco schermo (Meta+L): lo sfondo animato è anche lì, con il terminale originale e nessun dato reale;
+8. cambia il volume: sopra la dock compare la barra Quickhack;
+9. con un carico pesante (per esempio una compilazione) dopo qualche secondo parte la modalità allerta.
 
 Errori: `journalctl --user -b | grep -iE "cyberneon|qml"`. Per vedere gli errori dei widget QML in un terminale serve
 `QT_FORCE_STDERR_LOGGING=1`.
@@ -192,6 +237,10 @@ rallentate 12 volte), `08-alttab.png` (strumento di anteprima ufficiale di KWin,
 `09-notification.png`, `10-lockscreen.png`, `05-splash.png`, `04-sddm-test.png`, più `install.log`, `effects.txt` (effetti caricati),
 `qmllint.txt` e `plasmashell-errors.txt`. Il tuo sistema non viene toccato.
 
+`bash lab/run-lab.sh reactive` prova solo l'HUD reattivo: traffico reale da un secondo container, carico reale sulla CPU, batteria e
+TUXEDO Control Center **simulati** su un bus privato, journal di prova con un testo segreto che non deve mai comparire. I risultati
+sono in `alert.txt`, `mocks.txt`, `reactive.txt` e negli screenshot `11`–`24`.
+
 ## Disinstallazione
 
 ```bash
@@ -206,7 +255,8 @@ cyberneon-kde/
 ├── install.sh / uninstall.sh      installazione e ripristino
 ├── cyberneon.conf                 configurazione
 ├── kde/
-│   ├── shared/CyberNeonLive.qml   sfondo animato (unico componente, collegato in wallpaper, splash e SDDM)
+│   ├── shared/                    sfondo animato (CyberNeonLive.qml), stato di carico e batteria, impostazioni QML
+│   ├── bin/                       script di supporto: bus, terminale live, suoni, TUXEDO Control Center
 │   ├── layout.js                  layout HUD: pannelli, widget, sfondo (Plasma scripting)
 │   ├── decoration/cyberneon/      cornici delle finestre in QML (alone neon, animazioni)
 │   ├── wallpaper/                 plugin dello sfondo animato
@@ -220,6 +270,7 @@ cyberneon-kde/
 │   ├── make_kde_themes.py         tema Plasma (vetro, alone, angoli tagliati) + cornici SVG + schema colori
 │   ├── make_kvantum.py            tema Kvantum (app Qt in vetro)
 │   ├── build_theme.py             tema GTK
+│   ├── make_sounds.py             tema audio sintetico (solo libreria standard)
 │   ├── make_icons.py, make_logo_icon.py, make_cursors.py, make_wallpaper.py, make_system_assets.py
 │   └── install_fonts.sh, install_papirus.sh
 ├── lab/                           laboratorio Docker (Dockerfile, run-lab.sh, inside.sh)
@@ -238,6 +289,8 @@ cyberneon-kde/
   `kde/decoration/cyberneon/contents/ui/main.qml`.
 - **Glitch**: intensità nello shader `kde/effects/cyberneon_glitch/contents/shaders/glitch_core.frag`, durate in `contents/code/main.js`.
 - **Widget HUD**: `kde/plasmoids/org.cyberneon.*/contents/ui/main.qml`; posizioni in `kde/layout.js`.
+- **Allerta**: tempi di ingresso e uscita in `kde/shared/CyberNeonReactor.qml`, effetti in `kde/shared/CyberNeonLive.qml`.
+- **Suoni**: `scripts/make_sounds.py`.
 - **Vetro e alone di pannelli/popup**: `glass_frame()` e `glow_shadow()` in `make_kde_themes.py`.
 
 ## Note tecniche
@@ -256,6 +309,14 @@ Cose verificate nel laboratorio:
 - **Alt+Tab**: il selettore si prova senza tastiera con `/usr/lib/kwin-tabbox-preview <percorso>/contents/ui/main.qml`.
 - **Blocco schermo e OSD** in Plasma 6.8 non si personalizzano più dal tema globale: il blocco schermo usa il plugin dello sfondo
   (quindi è animato) e il tema Plasma per campi e pulsanti.
+- **OSD personalizzato**: con `[OSD] Enabled=false` in `plasmarc` Plasma non mostra l'OSD ma smette anche di emettere i segnali
+  `osdProgress`/`osdText`. Le **chiamate** a `org.kde.osdService` però continuano ad arrivare e si leggono con `busctl --user monitor`.
+  QML non ha processi in streaming: `cn-bus-watch` lavora a long poll, con due attese sfalsate per non perdere eventi.
+- **Finestre OSD dai widget**: un `PlasmaCore.Dialog` senza `visualParent` torna nella posizione predefinita quando viene rimostrato;
+  ancorato a un punto del desktop resta al suo posto.
+- **Effetti KWin in JavaScript**: `effect.readConfig` legge solo le chiavi dichiarate in `contents/config/main.xml`.
+- **Nomi in QML**: una proprietà `onQualcosa` viene scambiata per un gestore di segnale e `state` è già di `Item`: entrambi danno
+  valori sbagliati senza alcun errore.
 - `kpackagetool6` rifiuta i pacchetti `KWin/Decoration`: la decorazione viene **copiata** in `~/.local/share/kwin/decorations/`.
 - Gli effetti KWin copiati con KWin già avviato si caricano al login successivo: l'installer li carica subito via D-Bus.
 

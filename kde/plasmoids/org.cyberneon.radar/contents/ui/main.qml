@@ -21,9 +21,13 @@ PlasmoidItem {
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     preferredRepresentation: fullRepresentation
 
-    Timer { interval: 1000; running: true; repeat: true; triggeredOnStart: true; onTriggered: root.now = new Date() }
-    FrameAnimation {    // smooth sweep
-        running: true
+    CyberNeonPower { id: power }
+    Timer {
+        interval: 1000; running: true; repeat: true; triggeredOnStart: true
+        onTriggered: { root.now = new Date(); if (power.lowPower) root.secs = root.now.getSeconds() }
+    }
+    FrameAnimation {    // smooth sweep (one step per second on low battery)
+        running: !power.lowPower
         onTriggered: { const d = new Date(); root.secs = d.getSeconds() + d.getMilliseconds() / 1000 }
     }
 

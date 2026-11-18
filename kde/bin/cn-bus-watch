@@ -1,0 +1,46 @@
+#!/bin/bash
+# CyberNeon: waits for the next OSD request or desktop notification on the session bus, prints it as JSON, exits.
+# QML has no streaming process API, so the Biomonitor runs this as a long poll.
+#   cn-bus-watch [HOLD_MS]   after the first event keep collecting for HOLD_MS (closes the gap between two polls)
+# The bus is only monitored for these calls. The text of a notification is never printed: only the fact it arrived.
+# FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
+export LC_ALL=C
+hold_ms=${1:-0}
+parent=$PPID
+command -v busctl >/dev/null 2>&1 || { sleep 60; exit 1; }
+
+exec 3< <(exec busctl --user monitor --json=short \
+    --match "type='method_call',interface='org.kde.osdService',path='/org/kde/osdService'" \
+    --match "type='method_call',interface='org.freedesktop.Notifications',member='Notify'" 2>/dev/null)
+monitor=$!
+trap 'kill "$monitor" 2>/dev/null' EXIT
+
+events=()
+parse() {
+    local ts member data=""
+    [[ $1 =~ \"timestamp-realtime\":([0-9]+) ]] || return 1; ts=${BASH_REMATCH[1]}
+    [[ $1 =~ \"member\":\"([A-Za-z]+)\" ]] || return 1; member=${BASH_REMATCH[1]}
+    if [ "$member" != Notify ] && [[ $1 =~ \"data\":(\[.*\])\}\}$ ]]; then data=${BASH_REMATCH[1]}; fi
+    events+=("{\"ts\":$ts,\"m\":\"$member\",\"a\":${data:-[]}}")
+    [ ${#events[@]} -le 20 ] || events=("${events[@]:1}")
+}
+now_us() { echo $(( ${EPOCHREALTIME/./} )); }
+
+while :; do
+    if IFS= read -r -t 30 -u 3 line; then
+        parse "$line" && break
+    else
+        [ $? -gt 128 ] || { sleep 5; exit 1; }      # the monitor ended (no session bus)
+        [ -d "/proc/$parent" ] || exit 0            # plasmashell is gone
+    fi
+done
+
+if [ "$hold_ms" -gt 0 ]; then
+    end=$(( $(now_us) + hold_ms * 1000 ))
+    while left=$(( end - $(now_us) )); [ "$left" -gt 0 ]; do
+        printf -v timeout '%d.%06d' $(( left / 1000000 )) $(( left % 1000000 ))
+        IFS= read -r -t "$timeout" -u 3 line || break
+        parse "$line"
+    done
+fi
+printf '%s\n' "${events[@]}"

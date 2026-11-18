@@ -1,6 +1,6 @@
 #version 140
 // CyberNeon Glitch shader (OpenGL core). Original. FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED.
-// u_glitch: 0 = clean window, 1 = full glitch (RGB split, displaced slices, scanlines, cyan flashes).
+// u_glitch: 0 = clean window, 1 = full glitch, up to 2 in alert mode (RGB split, displaced slices, scanlines, cyan flashes).
 uniform sampler2D sampler;
 uniform vec4 modulation;
 uniform float u_glitch;
@@ -11,7 +11,7 @@ float hash(float n) { return fract(sin(n) * 43758.5453); }
 
 void main()
 {
-    float g = clamp(u_glitch, 0.0, 1.0);
+    float g = clamp(u_glitch, 0.0, 2.0);
     float tick = floor(g * 14.0);                       // the slices jump 14 times during the animation
     vec2 uv = texcoord0;
     float band = floor(uv.y * 26.0);

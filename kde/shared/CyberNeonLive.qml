@@ -1,6 +1,7 @@
 // CyberNeon Live - the animated CyberNeon wallpaper as a reusable Qt Quick item (wallpaper plugin, SDDM, splash).
 // A 1:1 port of the Budgie edition's live layer (config/live-wallpaper.py in cyberneon-budgie): same elements,
 // positions, colours and timings, rendered by the GPU in sync with the display instead of 15 fps cairo frames.
+// On the desktop it can also react to the system: alert (load over the limits) and terminalLines (live terminal text).
 // Original artwork. FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
 import QtQuick
 import QtQuick.Shapes
@@ -11,6 +12,9 @@ Item {
     property url source            // the static CyberNeon wallpaper (3840x2160, make_wallpaper.py)
     property bool animated: true
     property bool running: true
+    property bool alert: false            // overload: alarm banner, red edges, faster animation, frequent glitches
+    property var terminalLines: []        // [{s: text, c: "cy"|"red", a: opacity}]; empty = the terminal painted in the image
+    property url terminalPlate            // the terminal background without text (make_wallpaper.py --terminal-plate)
 
     // wallpaper image coordinates (3840x2160) -> item coordinates ("zoom" = scaled and cropped)
     readonly property real sc: Math.max(width / 3840, height / 2160)
@@ -32,19 +36,51 @@ Item {
     property real t: 0
     FrameAnimation {
         running: cn.animated && cn.running && cn.visible
-        onTriggered: cn.t += frameTime
+        onTriggered: cn.t += frameTime * (cn.alert ? 1.6 : 1)
     }
 
     Rectangle { anchors.fill: parent; color: "#070d1a" }
 
-    Image {
-        id: base
+    Item {
+        id: scene             // what the glitch slices copy: the image and the live terminal
         anchors.fill: parent
-        source: cn.source
-        fillMode: Image.PreserveAspectCrop
-        asynchronous: true
-        cache: false
-        smooth: true
+
+        Image {
+            id: base
+            anchors.fill: parent
+            source: cn.source
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            cache: false
+            smooth: true
+        }
+
+        // -------------------------------------------------------------- live terminal, same place and type as the image's
+        Image {
+            id: plate
+            x: cn.mx(236); y: cn.my(384); width: 1028 * cn.sc; height: 752 * cn.sc
+            source: cn.terminalLines.length > 0 ? cn.terminalPlate : ""
+            visible: status === Image.Ready && base.status === Image.Ready
+            asynchronous: true
+            smooth: true
+
+            Repeater {
+                model: cn.terminalLines
+                Text {
+                    required property var modelData
+                    required property int index
+                    x: 28 * cn.sc
+                    y: (56 + index * 56) * cn.sc - baselineOffset
+                    width: plate.width - 56 * cn.sc
+                    elide: Text.ElideRight
+                    text: modelData.s
+                    color: modelData.c === "red" ? cn.red : cn.cy
+                    opacity: modelData.a
+                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.pixelSize: Math.max(9, 30 * cn.sc)
+                }
+            }
+        }
     }
 
     Item {
@@ -197,17 +233,31 @@ Item {
             function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff }
             function fire() {
                 const s = [];
-                for (let i = 0; i < 5; i++) s.push({ sy: rnd() * cn.height, sh: 4 + rnd() * 26, dx: (rnd() - 0.5) * 120 });
+                const n = cn.alert ? 9 : 5, spread = cn.alert ? 260 : 120;
+                for (let i = 0; i < n; i++) s.push({ sy: rnd() * cn.height, sh: 4 + rnd() * 26, dx: (rnd() - 0.5) * spread });
                 slices = s; lineY = rnd() * cn.height; visible = true; off.restart();
+                for (let i = 0; i < sliceItems.count; i++) sliceItems.itemAt(i).scheduleUpdate();
             }
-            Timer { id: off; interval: 130; onTriggered: { glitch.visible = false; next.interval = 7000 + Math.random() * 7000; next.restart() } }
+            Timer {
+                id: off; interval: 130
+                onTriggered: {
+                    glitch.visible = false;
+                    next.interval = cn.alert ? 600 + Math.random() * 1400 : 7000 + Math.random() * 7000;
+                    next.restart();
+                }
+            }
             Timer { id: next; interval: 9000; running: fx.visible && cn.running; onTriggered: glitch.fire() }
+            Connections {
+                target: cn
+                function onAlertChanged() { if (cn.alert && !glitch.visible) { next.interval = 300; next.restart() } }
+            }
             Repeater {
+                id: sliceItems
                 model: glitch.slices.length
                 ShaderEffectSource {   // a strip of the real wallpaper, displaced sideways
                     required property int index
                     readonly property var sl: glitch.slices[index]
-                    sourceItem: base
+                    sourceItem: scene
                     sourceRect: Qt.rect(0, sl.sy, cn.width, sl.sh)
                     x: sl.dx; y: sl.sy; width: cn.width; height: sl.sh
                     live: false
@@ -215,7 +265,72 @@ Item {
             }
             Rectangle {
                 y: glitch.lineY; width: cn.width; height: 3
-                color: glitch.seed % 2 ? cn.red : cn.cy; opacity: 0.6
+                color: cn.alert || glitch.seed % 2 ? cn.red : cn.cy; opacity: 0.6
+            }
+        }
+
+        // ------------------------------------------------------------------ alert: red screen edges + alarm banner
+        Item {
+            id: alarm
+            anchors.fill: parent
+            visible: cn.alert
+            readonly property real edge: 150 * Math.max(0.5, cn.sc * 2)
+
+            Item {
+                anchors.fill: parent
+                SequentialAnimation on opacity {      // about one pulse per second, well below flashing rates
+                    running: alarm.visible && cn.running; loops: Animation.Infinite
+                    NumberAnimation { from: 0.25; to: 1; duration: 450; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 1; to: 0.25; duration: 450; easing.type: Easing.InOutSine }
+                }
+                Rectangle {
+                    width: parent.width; height: alarm.edge
+                    gradient: Gradient {
+                        GradientStop { position: 0; color: Qt.rgba(1, 0.165, 0.31, 0.3) }
+                        GradientStop { position: 1; color: Qt.rgba(1, 0.165, 0.31, 0) }
+                    }
+                }
+                Rectangle {
+                    y: parent.height - height; width: parent.width; height: alarm.edge
+                    gradient: Gradient {
+                        GradientStop { position: 0; color: Qt.rgba(1, 0.165, 0.31, 0) }
+                        GradientStop { position: 1; color: Qt.rgba(1, 0.165, 0.31, 0.3) }
+                    }
+                }
+                Rectangle {
+                    width: alarm.edge; height: parent.height
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0; color: Qt.rgba(1, 0.165, 0.31, 0.3) }
+                        GradientStop { position: 1; color: Qt.rgba(1, 0.165, 0.31, 0) }
+                    }
+                }
+                Rectangle {
+                    x: parent.width - width; width: alarm.edge; height: parent.height
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0; color: Qt.rgba(1, 0.165, 0.31, 0) }
+                        GradientStop { position: 1; color: Qt.rgba(1, 0.165, 0.31, 0.3) }
+                    }
+                }
+            }
+
+            Rectangle {   // lights up over "!! INTRUSION COUNTERMEASURES ARMED !!" in the image
+                x: cn.mx(1004); y: cn.my(1848)
+                width: banner.implicitWidth + 32 * cn.sc; height: 54 * cn.sc
+                color: cn.red
+                SequentialAnimation on opacity {
+                    running: alarm.visible && cn.running; loops: Animation.Infinite
+                    NumberAnimation { to: 1; duration: 1 } PauseAnimation { duration: 420 }
+                    NumberAnimation { to: 0; duration: 1 } PauseAnimation { duration: 320 }
+                }
+                Text {
+                    id: banner
+                    anchors.centerIn: parent
+                    text: "!! INTRUSION COUNTERMEASURES ARMED !!"
+                    color: "#070d1a"
+                    font.family: "Chakra Petch"; font.bold: true; font.pixelSize: Math.max(10, 32 * cn.sc)
+                }
             }
         }
     }

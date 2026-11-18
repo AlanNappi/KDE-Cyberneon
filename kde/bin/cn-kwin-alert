@@ -1,0 +1,7 @@
+#!/bin/bash
+# CyberNeon: tells the KWin glitch effect whether the HUD is in alert mode.   cn-kwin-alert true|false
+# FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
+case ${1:-} in true|false) ;; *) exit 2 ;; esac
+kwriteconfig6 --file kwinrc --group Effect-cyberneon_glitch --key Alert "$1"
+busctl --user call org.kde.KWin /Effects org.kde.kwin.Effects reconfigureEffect s cyberneon_glitch >/dev/null 2>&1
+exit 0

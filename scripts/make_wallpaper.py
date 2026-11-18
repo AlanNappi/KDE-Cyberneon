@@ -9,6 +9,8 @@ panel corner (dock 90 px wide, top bar 34 px high, red top block up to x=110).
 --logo  : an image you provide (transparent background) placed in the centre sigil, tinted neon red.
           Without it an original chevron emblem is drawn. No third-party logo ships with the repo.
 --login : variant for the login screen / GRUB (no panel fillet).
+--terminal-plate : write only the inside of the terminal window without its text, pixel-matched to the normal
+          wallpaper made with the same options (the live wallpaper draws real text on it).
 """
 import argparse, math, random, sys
 import cairo
@@ -18,6 +20,7 @@ _ap = argparse.ArgumentParser()
 _ap.add_argument("out")
 _ap.add_argument("--login", action="store_true")
 _ap.add_argument("--no-fillet", action="store_true", help="no red panel fillet (KDE floating panels)")
+_ap.add_argument("--terminal-plate", action="store_true", help="only the empty terminal area (live wallpaper)")
 _ap.add_argument("--label", default="N E T R U N N E R")
 _ap.add_argument("--logo", default="")
 _ap.add_argument("--monitor-width", type=int, default=1920)
@@ -169,10 +172,11 @@ log = [
     (CY, 0.55, "[ OK ] 1.2 GB @ 340 MB/s"),
     (CY, 1.0, "> wipe --logs && disconnect"),
 ]
-for i, (c, a, s) in enumerate(log):
-    text(s, tx + 34, ty + 110 + i*56, c, a, MONO, 30)
-font(MONO, 30); _e = cr.text_extents(log[-1][2])
-cr.set_source_rgba(*rgb(CY, 1)); cr.rectangle(tx + 34 + _e.x_advance + 8, ty + 110 + 11*56 - 26, 18, 32); cr.fill()
+if not ARGS.terminal_plate:
+    for i, (c, a, s) in enumerate(log):
+        text(s, tx + 34, ty + 110 + i*56, c, a, MONO, 30)
+    font(MONO, 30); _e = cr.text_extents(log[-1][2])
+    cr.set_source_rgba(*rgb(CY, 1)); cr.rectangle(tx + 34 + _e.x_advance + 8, ty + 110 + 11*56 - 26, 18, 32); cr.fill()
 
 # ------------------------------------------------------------- 6. network graph (top right)
 nodes = [(2820, 330), (3080, 250), (3330, 380), (3560, 280), (2950, 560), (3220, 620), (3480, 560), (3650, 760), (3100, 860)]
@@ -234,6 +238,8 @@ img.paste(crisp.crop((260, 334, 1270, 374)), (260, 334))
 if FILLET:
     _b = (int(85*S), int(30*S), int(115*S), int(57.5*S))
     img.paste(Image.open(base).convert("RGB").crop(_b), _b[:2])
+if ARGS.terminal_plate:
+    img = img.crop((236, 384, 1264, 1136))     # CyberNeonLive.qml places it at the same coordinates
 img.save(OUT, optimize=True)
 import os; os.remove(base)
 print("saved", OUT)
