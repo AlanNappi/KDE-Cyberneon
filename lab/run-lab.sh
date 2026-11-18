@@ -3,7 +3,7 @@
 # Needs Docker. Uses the host GPU render node (/dev/dri/renderD*) so KWin can composite with OpenGL.
 set -euo pipefail
 L="$(cd "$(dirname "$0")" && pwd)"; REPO="$(dirname "$L")"
-mkdir -p "$L/out"; rm -f "$L/out"/*
+mkdir -p "$L/out"; rm -rf "$L/out"/* 2>/dev/null || docker run --rm -v "$L/out:/out" archlinux:latest sh -c "rm -rf /out/*"
 docker build -t cyberneon-kde-lab "$L"
 ARGS=(--rm --shm-size=1g --cap-add=SYS_NICE -v "$REPO:/repo:ro" -v "$L/out:/out" -v "$L/inside.sh:/inside.sh:ro")
 for r in /dev/dri/renderD*; do [ -e "$r" ] && ARGS+=(--device "$r" --group-add "$(stat -c %g "$r")"); done

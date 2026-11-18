@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Id": "org.cyberneon.chrono",
+        "Name": "CyberNeon Chrono",
+        "Description": "Big HUD counter clock: time as the count, seconds as depleting ticks. Fan made, inspired by Cyberpunk 2077 by CD PROJEKT RED.",
+        "Category": "Date and Time",
+        "Icon": "preferences-system-time",
+        "Authors": [ { "Name": "CyberNeon (fan made)" } ],
+        "License": "GPL-2.0-or-later",
+        "Version": "3.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

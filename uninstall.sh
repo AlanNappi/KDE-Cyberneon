@@ -13,7 +13,7 @@ DATA="$HOME/.local/share/cyberneon"
 P="$DATA/backups/pristine"
 say() { printf '\033[38;2;91;238;220m==>\033[0m %s\n' "$*"; }
 
-FILES="kdeglobals kwinrc kwinrulesrc plasmarc plasmashellrc plasma-org.kde.plasma.desktop-appletsrc kcminputrc konsolerc ksplashrc kscreenlockerrc
+FILES="kdeglobals kwinrc kwinrulesrc plasmarc plasmashellrc plasma-org.kde.plasma.desktop-appletsrc kcminputrc konsolerc ksplashrc kscreenlockerrc plasmanotifyrc
        gtk-3.0/settings.ini gtk-4.0/settings.ini gtk-3.0/gtk.css gtk-4.0/gtk.css Kvantum/kvantum.kvconfig"
 if [ -d "$P" ]; then
     say "restoring KDE / GTK settings from $P"
@@ -27,7 +27,7 @@ else
 fi
 
 say "removing CyberNeon files"
-for w in org.cyberneon.hud org.cyberneon.clock org.cyberneon.redblock; do kpackagetool6 -t Plasma/Applet -r "$w" >/dev/null 2>&1 || true; done
+for w in org.cyberneon.biomonitor org.cyberneon.radar org.cyberneon.chrono org.cyberneon.hud org.cyberneon.clock org.cyberneon.redblock; do kpackagetool6 -t Plasma/Applet -r "$w" >/dev/null 2>&1 || true; done
 rm -rf "$HOME/.local/share/kwin/decorations/kwin4_decoration_qml_cyberneon"
 rm -rf "$HOME/.themes/CyberNeon" \
        "$HOME/.local/share/icons/CyberNeon-Icons" "$HOME/.local/share/icons/CyberNeon-Cursors" \
@@ -36,7 +36,8 @@ rm -rf "$HOME/.themes/CyberNeon" \
        "$HOME/.local/share/konsole/CyberNeon.colorscheme" "$HOME/.local/share/konsole/CyberNeon.profile" \
        "$HOME/.config/cyberneon" "$DATA/launcher-logo.png" "$HOME/.config/Kvantum/CyberNeon" \
        "$HOME/.local/share/plasma/wallpapers/org.cyberneon.wallpaper" \
-       "$HOME/.local/share/plasma/look-and-feel/org.cyberneon.desktop" "$HOME/.local/share/kwin/effects/cyberneon_glitch"
+       "$HOME/.local/share/plasma/look-and-feel/org.cyberneon.desktop" "$HOME/.local/share/kwin/effects/cyberneon_glitch" \
+       "$HOME/.local/share/kwin/tabbox/cyberneon"
 [ -L "$HOME/.icons/CyberNeon-Cursors" ] && rm -f "$HOME/.icons/CyberNeon-Cursors"
 grep -q 'Inherits=CyberNeon-Cursors' "$HOME/.icons/default/index.theme" 2>/dev/null && rm -f "$HOME/.icons/default/index.theme"
 grep -q '^Icon=firefox$' "$HOME/.local/share/applications/firefox_firefox.desktop" 2>/dev/null \

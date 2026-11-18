@@ -1,92 +1,79 @@
-// CyberNeon - Plasma 6 desktop layout (run by install.sh through org.kde.PlasmaShell.evaluateScript).
+// CyberNeon v3 - Plasma 6 desktop layout (run by install.sh through org.kde.PlasmaShell.evaluateScript).
 // Placeholders @...@ are filled in by install.sh.
 // FAN MADE - inspired by Cyberpunk 2077 by CD PROJEKT RED (trademarks of CD PROJEKT S.A.).
 //
-// Same geometry as the Budgie version:
-//   top bar: full width, 34 px, neon bottom line; red block 76-110 (org.cyberneon.redblock widget)
-//   dock   : left edge below the bar, 90 px (navy 0-76, red bar 76-90 from the Plasma theme)
-//   corner : the 45deg red fillet (90..110, 34..54) is painted in the wallpaper
+// A game-HUD style desktop in four zones (original artwork, real system data):
+//   top-left    : floating badge panel (logo launcher, workspaces) + Biomonitor widget
+//   top-right   : floating panel (system tray, clock, lock/logout) + Radar clock / objective tracker widget
+//   bottom      : floating dock, centred, sized to its icons (quick slots)
+//   bottom-right: Chrono counter widget          (notifications pop up bottom-left: plasmanotifyrc)
+// Panels are glass with blur behind and a neon glow (Plasma theme shadows).
 
 var geo = screenGeometry(0);           // primary screen
-var DOCK = 90, BAR = 34;
+var BAR = 44, DOCK = 62, GAP = 8;
 
 // ---------------------------------------------------------------- remove the current panels
 panels().forEach(function (p) { p.remove(); });
 
-// The top bar is created FIRST so it spans the whole width and the dock starts below it (as in Budgie):
-// the bar's neon line crosses the dock's red bar, with the red block 76-110 above the line.
-// ---------------------------------------------------------------- top bar (full width)
-var bar = new Panel;
-bar.location = "top";
-bar.height = BAR;
-bar.hiding = "none";
-try { bar.floating = false; } catch (e) {}
-bar.alignment = "left";
-bar.offset = 0;
+function floatingPanel(location, height, alignment) {
+    var p = new Panel;
+    p.location = location;
+    p.height = height;
+    p.hiding = "none";
+    try { p.floating = true; } catch (e) {}
+    try { p.lengthMode = "fit"; } catch (e) {}
+    p.alignment = alignment;
+    return p;
+}
 
-// red block 76-110 px (it positions itself in screen coordinates)
-bar.addWidget("org.cyberneon.redblock");
-
-// grid launcher like Budgie's AppMenu: Application Dashboard lives in kdeplasma-addons on Plasma 6,
-// so fall back to Kicker / Kickoff when it is not installed
+// ---------------------------------------------------------------- top-left: badge panel
+var badge = floatingPanel("top", BAR, "left");
 var launcherType = ["org.kde.plasma.kickerdash", "org.kde.plasma.kicker", "org.kde.plasma.kickoff"]
     .filter(function (t) { return knownWidgetTypes.indexOf(t) >= 0; })[0] || "org.kde.plasma.kickoff";
-var dash = bar.addWidget(launcherType);
+var dash = badge.addWidget(launcherType);
 dash.currentConfigGroup = ["General"];
 dash.writeConfig("icon", "@LOGO_ICON@");
+var pager = badge.addWidget("org.kde.plasma.pager");
+pager.currentConfigGroup = ["General"];
+pager.writeConfig("displayedText", "Number");
 
-bar.addWidget("org.kde.plasma.panelspacer");
-bar.addWidget("org.kde.plasma.systemtray");
-
-var clock = bar.addWidget("org.kde.plasma.digitalclock");
+// ---------------------------------------------------------------- top-right: system panel
+var sys = floatingPanel("top", BAR, "right");
+sys.addWidget("org.kde.plasma.systemtray");
+var clock = sys.addWidget("org.kde.plasma.digitalclock");
 clock.currentConfigGroup = ["Appearance"];
-clock.writeConfig("showDate", true);
-clock.writeConfig("dateFormat", "custom");
-clock.writeConfig("customDateFormat", "yyyy-MM-dd");
-clock.writeConfig("dateDisplayFormat", 1);               // date beside the time
+clock.writeConfig("showDate", false);
 clock.writeConfig("use24hFormat", 2);                    // always 24 h
 clock.writeConfig("autoFontAndSize", false);
-clock.writeConfig("fontFamily", "Chakra Petch");
-clock.writeConfig("boldText", true);
+clock.writeConfig("fontFamily", "Orbitron");
+clock.writeConfig("boldText", false);
+sys.addWidget("org.kde.plasma.lock_logout");
 
-bar.addWidget("org.kde.plasma.lock_logout");
-
-// ---------------------------------------------------------------- left dock (below the bar)
-var dock = new Panel;
-dock.location = "left";
-dock.height = DOCK;                    // thickness
-dock.hiding = "none";
-try { dock.floating = false; } catch (e) {}
-
-var kickoff = dock.addWidget("org.kde.plasma.kickoff");
-kickoff.currentConfigGroup = ["General"];
-kickoff.writeConfig("icon", "@MENU_ICON@");
-
+// ---------------------------------------------------------------- bottom: dock (quick slots)
+var dock = floatingPanel("bottom", DOCK, "center");
 var tasks = dock.addWidget("org.kde.plasma.icontasks");
 tasks.currentConfigGroup = ["General"];
 tasks.writeConfig("launchers", "@LAUNCHERS@");
+tasks.writeConfig("iconSpacing", 2);
 
-dock.addWidget("org.kde.plasma.panelspacer");
-dock.addWidget("org.kde.plasma.pager");
-
-// ---------------------------------------------------------------- wallpaper + desktop widgets
+// ---------------------------------------------------------------- wallpaper + HUD widgets
 desktops().forEach(function (d) {
     d.wallpaperPlugin = "@WALLPAPER_PLUGIN@";             // org.cyberneon.wallpaper (animated) or org.kde.image
     d.currentConfigGroup = ["Wallpaper", "@WALLPAPER_PLUGIN@", "General"];
     d.writeConfig("Image", "@WALLPAPER@");
-    d.writeConfig("FillMode", 2);                         // scaled and cropped (= Budgie "zoom")
+    d.writeConfig("FillMode", 2);                         // scaled and cropped
 });
 
-// desktop widget coordinates are relative to the area left free by the panels (checked in the lab)
+// desktop widget coordinates are relative to the area left free by the panels
 var desk = desktopForScreen(0);
 if (desk) {
     desk.widgets().forEach(function (w) {
-        if (w.type === "org.cyberneon.hud" || w.type === "org.cyberneon.clock") w.remove();
+        if (w.type.indexOf("org.cyberneon.") === 0) w.remove();
     });
-    // HUD: bottom-right, 46 px from the right edge and 40 px from the bottom (as in Budgie)
-    desk.addWidget("org.cyberneon.hud", geo.width - DOCK - 490 - 46, geo.height - BAR - 226 - 40, 490, 226);
-    // clock: top-right, under the bar
-    desk.addWidget("org.cyberneon.clock", geo.width - DOCK - 330 - 50, 40, 330, 140);
+    var freeH = geo.height - (BAR + 2 * GAP) - (DOCK + 2 * GAP);
+    desk.addWidget("org.cyberneon.biomonitor", 12, 2, 560, 104);
+    desk.addWidget("org.cyberneon.radar", geo.width - 340 - 16, 4, 340, 470);
+    desk.addWidget("org.cyberneon.chrono", geo.width - 420 - 20, freeH - 160 - 8, 420, 160);
 }
 
-print("panels " + bar.id + " " + dock.id);
+print("panels " + badge.id + " " + sys.id + " " + dock.id);

@@ -74,7 +74,7 @@ DATA="$HOME/.local/share/cyberneon"
 BK="$DATA/backups/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BK"
 for f in kdeglobals kwinrc kwinrulesrc plasmarc plasmashellrc plasma-org.kde.plasma.desktop-appletsrc kcminputrc \
-         konsolerc ksplashrc kscreenlockerrc gtk-3.0/settings.ini gtk-4.0/settings.ini gtk-3.0/gtk.css gtk-4.0/gtk.css Kvantum/kvantum.kvconfig; do
+         konsolerc ksplashrc kscreenlockerrc plasmanotifyrc gtk-3.0/settings.ini gtk-4.0/settings.ini gtk-3.0/gtk.css gtk-4.0/gtk.css Kvantum/kvantum.kvconfig; do
     [ -f "$HOME/.config/$f" ] && { mkdir -p "$BK/config/$(dirname "$f")"; cp "$HOME/.config/$f" "$BK/config/$f"; }
 done
 [ -f "$HOME/.gtkrc-2.0" ] && cp "$HOME/.gtkrc-2.0" "$BK/gtkrc-2.0"
@@ -120,13 +120,14 @@ done
 say "wallpaper -> ~/Pictures/Wallpapers/$WALLPAPER"
 WALLDIR="$HOME/Pictures/Wallpapers"; mkdir -p "$WALLDIR"
 WARGS=(--label "$LABEL" --monitor-width "$MON_W"); [ -n "$LOGO" ] && WARGS+=(--logo "$LOGO")
-python3 -I "$SC/make_wallpaper.py" "$WALLDIR/$WALLPAPER" "${WARGS[@]}"
+python3 -I "$SC/make_wallpaper.py" "$WALLDIR/$WALLPAPER" --no-fillet "${WARGS[@]}"
 
 say "login / GRUB assets -> $DATA/system"
 mkdir -p "$DATA/system"
 python3 -I "$SC/make_wallpaper.py" "$DATA/system/login-4k.png" --login "${WARGS[@]}"
 python3 -I "$SC/make_system_assets.py" "$DATA/system/login-4k.png" "$DATA/system"
 rm -f "$DATA/system/login-4k.png"
+cp "$WALLDIR/$WALLPAPER" "$DATA/system/cyberneon-wallpaper.png"   # animated SDDM login background
 cp "$REPO/system/grub/theme.txt" "$DATA/system/grub/theme.txt"
 if have grub-mkfont || have grub2-mkfont; then
     MK=$(command -v grub-mkfont || command -v grub2-mkfont); F="$HOME/.local/share/fonts/cyberneon"
@@ -176,43 +177,58 @@ if ls /usr/lib/qt6/plugins/styles/libkvantum.so /usr/lib/*/qt6/plugins/styles/li
     python3 -I "$SC/make_kvantum.py" "$HOME/.config/Kvantum/CyberNeon"
     printf '[General]\ntheme=CyberNeon\n' > "$HOME/.config/Kvantum/kvantum.kvconfig"
     kw --file kdeglobals --group KDE --key widgetStyle kvantum
+    KVANTUM=1
 else
     warn "Kvantum not installed: Qt apps keep Breeze with the CyberNeon colours (install the 'kvantum' package for the HUD-style widgets)"
 fi
 
-say "CyberNeon Live wallpaper, global theme + splash, lock screen, glitch effect"
+if [ "${ANIMATED_WALLPAPER:-yes}" = yes ]; then WP_PLUGIN=org.cyberneon.wallpaper; else WP_PLUGIN=org.kde.image; fi
+say "CyberNeon Live wallpaper, global theme + splash, lock screen, Alt+Tab switcher, glitch effect"
+# -L: the shared animation (kde/shared/CyberNeonLive.qml) is linked into each package
 for pair in "kde/wallpaper/org.cyberneon.wallpaper:plasma/wallpapers/org.cyberneon.wallpaper" \
             "kde/lookandfeel/org.cyberneon.desktop:plasma/look-and-feel/org.cyberneon.desktop" \
-            "kde/effects/cyberneon_glitch:kwin/effects/cyberneon_glitch"; do
+            "kde/effects/cyberneon_glitch:kwin/effects/cyberneon_glitch" \
+            "kde/tabbox/cyberneon:kwin/tabbox/cyberneon"; do
     src="$REPO/${pair%%:*}"; dst="$HOME/.local/share/${pair##*:}"
-    rm -rf "$dst"; mkdir -p "$dst"; cp -r "$src/." "$dst/"
+    rm -rf "$dst"; mkdir -p "$dst"; cp -rL "$src/." "$dst/"
 done
+sed -i "s|@WALLPAPER@|file://$WALLDIR/$WALLPAPER|" "$HOME/.local/share/plasma/look-and-feel/org.cyberneon.desktop/contents/splash/Splash.qml"
 kw --file ksplashrc --group KSplash --key Engine KSplashQML
 kw --file ksplashrc --group KSplash --key Theme org.cyberneon.desktop
-kw --file kscreenlockerrc --group Greeter --key WallpaperPlugin org.kde.image
-kw --file kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General --key Image "file://$DATA/system/cyberneon-login.png"
+# lock screen: the same (animated) wallpaper behind the Plasma lock screen, styled by the Plasma theme
+kw --file kscreenlockerrc --group Greeter --key WallpaperPlugin "$WP_PLUGIN"
+kw --file kscreenlockerrc --group Greeter --group Wallpaper --group "$WP_PLUGIN" --group General --key Image "file://$WALLDIR/$WALLPAPER"
+kw --file kwinrc --group TabBox --key LayoutName cyberneon
+kw --file kwinrc --group Plugins --key blurEnabled true
+kw --file kwinrc --group Plugins --key contrastEnabled true
 if [ "${GLITCH_EFFECT:-yes}" = yes ]; then
     kw --file kwinrc --group Plugins --key cyberneon_glitchEnabled true
     kw --file kwinrc --group Plugins --key scaleEnabled false     # Plasma's default open/close animation
 else
     kw --file kwinrc --group Plugins --key cyberneon_glitchEnabled false
 fi
-if [ "${ANIMATED_WALLPAPER:-yes}" = yes ]; then WP_PLUGIN=org.cyberneon.wallpaper; else WP_PLUGIN=org.kde.image; fi
-
-say "Dolphin transparency (${DOLPHIN_OPACITY}%) - KWin window rule"
 RULES=$(kreadconfig6 --file kwinrulesrc --group General --key rules)
-case ",$RULES," in *,cyberneon-dolphin,*) ;; *) RULES="${RULES:+$RULES,}cyberneon-dolphin" ;; esac
-kw --file kwinrulesrc --group General --key rules "$RULES"
-kw --file kwinrulesrc --group General --key count "$(echo "$RULES" | tr ',' '\n' | grep -c .)"
-R=(--file kwinrulesrc --group cyberneon-dolphin)
-kw "${R[@]}" --key Description "CyberNeon: Dolphin transparency"
-kw "${R[@]}" --key wmclass dolphin
-kw "${R[@]}" --key wmclassmatch 1
-kw "${R[@]}" --key wmclasscomplete false
-kw "${R[@]}" --key opacityactive "$DOLPHIN_OPACITY"
-kw "${R[@]}" --key opacityactiverule 2
-kw "${R[@]}" --key opacityinactive "$DOLPHIN_OPACITY"
-kw "${R[@]}" --key opacityinactiverule 2
+if [ "${KVANTUM:-0}" = 1 ]; then
+    # Kvantum already gives Qt windows a blurred glass background: drop the old whole-window opacity rule
+    RULES=$(echo "$RULES" | tr ',' '\n' | grep -vx cyberneon-dolphin | paste -sd, -)
+    kw --file kwinrulesrc --group General --key rules "$RULES"
+    kw --file kwinrulesrc --group General --key count "$(echo "$RULES" | tr ',' '\n' | grep -c . || true)"
+    kwriteconfig6 --file kwinrulesrc --group cyberneon-dolphin --key Description --delete 2>/dev/null || true
+else
+    say "Dolphin transparency (${DOLPHIN_OPACITY}%) - KWin window rule"
+    case ",$RULES," in *,cyberneon-dolphin,*) ;; *) RULES="${RULES:+$RULES,}cyberneon-dolphin" ;; esac
+    kw --file kwinrulesrc --group General --key rules "$RULES"
+    kw --file kwinrulesrc --group General --key count "$(echo "$RULES" | tr ',' '\n' | grep -c .)"
+    R=(--file kwinrulesrc --group cyberneon-dolphin)
+    kw "${R[@]}" --key Description "CyberNeon: Dolphin transparency"
+    kw "${R[@]}" --key wmclass dolphin
+    kw "${R[@]}" --key wmclassmatch 1
+    kw "${R[@]}" --key wmclasscomplete false
+    kw "${R[@]}" --key opacityactive "$DOLPHIN_OPACITY"
+    kw "${R[@]}" --key opacityactiverule 2
+    kw "${R[@]}" --key opacityinactive "$DOLPHIN_OPACITY"
+    kw "${R[@]}" --key opacityinactiverule 2
+fi
 
 say "Konsole profile + colours"
 mkdir -p "$HOME/.local/share/konsole"
@@ -249,17 +265,22 @@ if ! grep -q '# >>> cyberneon prompt >>>' "$HOME/.bashrc" 2>/dev/null; then
     printf '\n# >>> cyberneon prompt >>>\n[ -f "$HOME/.config/cyberneon/prompt.bash" ] && . "$HOME/.config/cyberneon/prompt.bash"\n# <<< cyberneon prompt <<<\n' >> "$HOME/.bashrc"
 fi
 
-say "Plasma widgets: CyberNeon HUD (label: $HUD_LABEL) + CyberNeon Clock"
+say "Plasma HUD widgets: Biomonitor (operator: $HUD_LABEL), Radar + objective tracker, Chrono"
 TMPW=$(mktemp -d); trap 'rm -rf "$TMPW"' EXIT
 cp -r "$REPO/kde/plasmoids/." "$TMPW/"
-sed -i "s/@HUD_LABEL@/$HUD_LABEL/" "$TMPW/org.cyberneon.hud/contents/ui/main.qml"
-for w in org.cyberneon.hud org.cyberneon.clock org.cyberneon.redblock; do
+sed -i "s/@HUD_LABEL@/$HUD_LABEL/" "$TMPW/org.cyberneon.biomonitor/contents/ui/main.qml"
+for w in org.cyberneon.biomonitor org.cyberneon.radar org.cyberneon.chrono; do
     kpackagetool6 -t Plasma/Applet -u "$TMPW/$w" >/dev/null 2>&1 || kpackagetool6 -t Plasma/Applet -i "$TMPW/$w" >/dev/null
 done
+for w in org.cyberneon.redblock org.cyberneon.hud org.cyberneon.clock; do   # v1/v2 widgets, no longer used
+    kpackagetool6 -t Plasma/Applet -r "$w" >/dev/null 2>&1 || true
+done
+# notifications pop up bottom-left, like incoming holo calls
+kw --file plasmanotifyrc --group Notifications --key PopupPosition 4
 
 # ------------------------------------------------------------------ layout (panels, wallpaper, desktop widgets)
 if [ "$LAYOUT" = 1 ]; then
-    say "Plasma layout: left dock + top bar + wallpaper + HUD/clock"
+    say "Plasma layout: HUD zones (badge + system panels, quick-slot dock, Biomonitor / Radar / Chrono)"
     LAUNCHERS=""
     IFS=',' read -ra L <<< "$PINNED"
     for l in "${L[@]}"; do
@@ -279,8 +300,8 @@ if [ "$LAYOUT" = 1 ]; then
                  -e "s|@WALLPAPER_PLUGIN@|$WP_PLUGIN|" "$REPO/kde/layout.js")
     OUT=$(dbus_call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$SCRIPT" || true)
     echo "   $OUT" | head -c 300; echo
-    for id in $(echo "$OUT" | grep -o 'panels [0-9]* [0-9]*' | cut -d' ' -f2-); do
-        kw --file plasmashellrc --group PlasmaViews --group "Panel $id" --key panelOpacity 1   # opaque
+    for id in $(echo "$OUT" | grep -oE 'panels( [0-9]+)+' | cut -d' ' -f2-); do
+        kw --file plasmashellrc --group PlasmaViews --group "Panel $id" --key panelOpacity 2   # translucent glass (blurred)
     done
 else
     say "layout skipped (--no-layout): set the wallpaper to $WALLDIR/$WALLPAPER and add the CyberNeon widgets by hand"

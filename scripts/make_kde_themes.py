@@ -174,137 +174,160 @@ def solid(col, op=None):
     return lambda x, y, w, h: f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{col}"{o}/>'
 
 
-def top_bottom_line(x, y, w, h):
-    # navy base, red glow rising 10 px, then 2 px red and 2 px hot core at the very bottom (14 px total)
-    gid = f"gb{x}_{y}"
-    return (f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1">'
-            f'<stop offset="0" stop-color="{RED}" stop-opacity="0"/><stop offset="1" stop-color="{RED}" stop-opacity="0.55"/>'
-            f'</linearGradient></defs>'
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{NAVY}"/>'
-            f'<rect x="{x}" y="{y}" width="{w}" height="10" fill="url(#{gid})"/>'
-            f'<rect x="{x}" y="{y + 10}" width="{w}" height="2" fill="{RED}"/>'
-            f'<rect x="{x}" y="{y + 12}" width="{w}" height="2" fill="{RED_HOT}"/>')
+def cframe(prefix, y0, fill, fa, line, la, border=2, cut=10, tl=True, br=True, margin=None, tick=None):
+    """One FrameSvg frame (all 9 elements, ids prefixed) with 45deg cuts at top-left / bottom-right, a `border` px
+    outline on the outer edge and an optional tick (side, colour, width) inside one edge."""
+    c = max(cut, border, 1)
+    sizes = {"center": (10, 10), "top": (10, c), "bottom": (10, c), "left": (c, 10), "right": (c, 10),
+             "topleft": (c, c), "topright": (c, c), "bottomleft": (c, c), "bottomright": (c, c)}
+
+    def base(x, y, w, h):
+        return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{fill}" fill-opacity="{fa}"/>'
+
+    def ln(x, y, w, h):
+        return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{line}" fill-opacity="{la}"/>' if la > 0 and border > 0 else ""
+
+    def tk(side, x, y, w, h):
+        if not tick or tick[0] != side:
+            return ""
+        _, col, tw = tick
+        if side == "left": return f'<rect x="{x + border}" y="{y}" width="{tw}" height="{h}" fill="{col}"/>'
+        if side == "bottom": return f'<rect x="{x}" y="{y + h - border - tw}" width="{w}" height="{tw}" fill="{col}"/>'
+        return ""
+
+    def edge(side):
+        def f(x, y, w, h):
+            s = base(x, y, w, h)
+            if side == "top": s += ln(x, y, w, border)
+            if side == "bottom": s += ln(x, y + h - border, w, border)
+            if side == "left": s += ln(x, y, border, h)
+            if side == "right": s += ln(x + w - border, y, border, h)
+            return s + tk(side, x, y, w, h)
+        return f
+
+    def corner(which, is_cut):
+        def f(x, y, w, h):
+            top, left = which.startswith("top"), which.endswith("left")
+            if not is_cut:
+                s = base(x, y, w, h)
+                s += ln(x, y if top else y + h - border, w, border) + ln(x if left else x + w - border, y, border, h)
+                if tick and tick[0] == "left" and left: s += f'<rect x="{x + border}" y="{y + (border if top else 0)}" width="{tick[2]}" height="{h - border}" fill="{tick[1]}"/>'
+                if tick and tick[0] == "bottom" and not top: s += f'<rect x="{x + (border if left else 0)}" y="{y + h - border - tick[2]}" width="{w - border}" height="{tick[2]}" fill="{tick[1]}"/>'
+                return s
+            if which == "topleft":
+                tri = f"{x + w},{y} {x + w},{y + h} {x},{y + h}"
+                stroke = f'<line x1="{x}" y1="{y + h - border / 2}" x2="{x + w - border / 2}" y2="{y}" stroke="{line}" stroke-opacity="{la}" stroke-width="{border * 1.42}"/>'
+            else:   # bottomright
+                tri = f"{x},{y} {x + w},{y} {x},{y + h}"
+                stroke = f'<line x1="{x + border / 2}" y1="{y + h}" x2="{x + w}" y2="{y + border / 2}" stroke="{line}" stroke-opacity="{la}" stroke-width="{border * 1.42}"/>'
+            return f'<polygon points="{tri}" fill="{fill}" fill-opacity="{fa}"/>' + (stroke if la > 0 and border > 0 else "")
+        return f
+
+    fills = {"center": lambda x, y, w, h: base(x, y, w, h), "top": edge("top"), "bottom": edge("bottom"),
+             "left": edge("left"), "right": edge("right"),
+             "topleft": corner("topleft", tl and cut > 0), "bottomright": corner("bottomright", br and cut > 0),
+             "topright": corner("topright", False), "bottomleft": corner("bottomleft", False)}
+    hints = {}
+    if margin is not None:
+        hints = {"top-margin": (1, margin), "bottom-margin": (1, margin), "left-margin": (margin, 1), "right-margin": (margin, 1)}
+    return frame_set(prefix, sizes, fills, hints, y0)
 
 
-def dock_glow(x, y, w, h):
-    # navy base with the red glow rising towards the bar (10 px inside the 76 px dock)
-    gid = f"gg{x}_{y}"
-    return (f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="0">'
-            f'<stop offset="0" stop-color="{RED}" stop-opacity="0"/><stop offset="1" stop-color="{RED}" stop-opacity="0.6"/>'
-            f'</linearGradient></defs>'
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{NAVY}"/>'
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="url(#{gid})"/>')
+def glow_shadow(color, cut=10, out=22, strength=0.6):
+    """shadow-* elements: a neon glow around a cut-corner frame, as embedded PNG tiles. The tiles reach `cut` px
+    under the window (so the glow follows the 45deg corners); shadow-hint-*-margin = `out` = glow outside."""
+    import base64, io, math
+    from PIL import Image, ImageChops, ImageFilter
+    T = out + cut                       # tile size
+    S = 2 * T + 40                      # sample window (frame) + glow, big enough for 9 slices
+    sc = 4                              # supersampling
+    shape = Image.new("L", (S * sc, S * sc), 0)
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(shape)
+    x0, y0, x1, y1 = out * sc, out * sc, (S - out) * sc, (S - out) * sc
+    c = cut * sc
+    d.polygon([(x0 + c, y0), (x1, y0), (x1, y1 - c), (x1 - c, y1), (x0, y1), (x0, y0 + c)], fill=255)
+    shape = shape.resize((S, S), Image.LANCZOS)
+    rim = shape.filter(ImageFilter.MaxFilter(3))
+    g1 = rim.filter(ImageFilter.GaussianBlur(out / 4)); g2 = rim.filter(ImageFilter.GaussianBlur(out / 2))
+    glow = ImageChops.add(g1.point(lambda v: int(v * 0.8)), g2.point(lambda v: int(v * 0.7)))
+    glow = ImageChops.subtract(glow, shape)                         # only outside the frame
+    glow = glow.point(lambda v: int(min(255, v * strength * 1.6)))
+    h = color.lstrip("#"); rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    img = Image.new("RGBA", (S, S), rgb + (0,)); img.putalpha(glow)
+    m = S // 2
+    tiles = {"topleft": (0, 0, T, T), "top": (m, 0, m + 2, T), "topright": (S - T, 0, S, T),
+             "left": (0, m, T, m + 2), "right": (S - T, m, S, m + 2),
+             "bottomleft": (0, S - T, T, S), "bottom": (m, S - T, m + 2, S), "bottomright": (S - T, S - T, S, S)}
+    body, x = "", 0
+    for name, box in tiles.items():
+        tile = img.crop(box); buf = io.BytesIO(); tile.save(buf, "PNG")
+        b64 = base64.b64encode(buf.getvalue()).decode()
+        w, hh = tile.size
+        body += (f'  <image id="shadow-{name}" x="{x}" y="300" width="{w}" height="{hh}" '
+                 f'xlink:href="data:image/png;base64,{b64}"/>\n')
+        x += w + 6
+    for side, (w, hh) in {"top": (1, out), "bottom": (1, out), "left": (out, 1), "right": (out, 1)}.items():
+        body += f'  <rect id="shadow-hint-{side}-margin" x="{x}" y="300" width="{w}" height="{hh}" fill="#000" fill-opacity="0"/>\n'
+        x += w + 6
+    return body
 
 
-def bar_shadow(x, y, w, h):
-    # the dock's red bar, drawn by KWin as the panel's right shadow: 8 px red + 6 px hot core (screen x 76-90)
-    return (f'<rect x="{x}" y="{y}" width="8" height="{h}" fill="{RED}"/>'
-            f'<rect x="{x + 8}" y="{y}" width="6" height="{h}" fill="{RED_HOT}"/>')
+def svg_doc_x(w, h, body):
+    """svg_doc with the xlink namespace (embedded images)"""
+    return (f'<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" '
+            f'xmlns:xlink="http://www.w3.org/1999/xlink" width="{w}" height="{h}" viewBox="0 0 {w} {h}">\n{body}</svg>\n')
 
 
-def dock_right_bar(x, y, w, h):
-    # navy base, red glow 10 px into the dock, 8 px red, 6 px hot core at the screen-side edge (24 px total)
-    gid = f"gr{x}_{y}"
-    return (f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="0">'
-            f'<stop offset="0" stop-color="{RED}" stop-opacity="0"/><stop offset="1" stop-color="{RED}" stop-opacity="0.6"/>'
-            f'</linearGradient></defs>'
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{NAVY}"/>'
-            f'<rect x="{x}" y="{y}" width="10" height="{h}" fill="url(#{gid})"/>'
-            f'<rect x="{x + 10}" y="{y}" width="8" height="{h}" fill="{RED}"/>'
-            f'<rect x="{x + 18}" y="{y}" width="6" height="{h}" fill="{RED_HOT}"/>')
-
-
-def panel_background():
-    body = ""
-    # top bar (north): bottom neon line; left end = red block (90..110 px on screen, continues the dock bar)
-    n_sizes = {"center": (10, 10), "top": (10, 1), "bottom": (10, 14), "left": (20, 10), "right": (1, 10),
-               "topleft": (20, 1), "topright": (1, 1), "bottomleft": (20, 14), "bottomright": (1, 14)}
-    n_fill = {"center": solid(NAVY), "top": solid(NAVY), "bottom": top_bottom_line, "left": solid(RED),
-              "right": solid(NAVY), "topleft": solid(RED), "topright": solid(NAVY),
-              "bottomleft": solid(RED), "bottomright": top_bottom_line}
-    n_hint = {"top-margin": (1, 1), "bottom-margin": (1, 4), "left-margin": (1, 1), "right-margin": (6, 1)}
-    body += frame_set("north-", n_sizes, n_fill, n_hint, 0)
-    # dock (west): red bar on the right edge (76..90 px on screen)
-    w_sizes = {"center": (10, 10), "top": (10, 1), "bottom": (10, 1), "left": (1, 10), "right": (24, 10),
-               "topleft": (1, 1), "topright": (24, 1), "bottomleft": (1, 1), "bottomright": (24, 1)}
-    w_fill = {"center": solid(NAVY), "top": solid(NAVY), "bottom": solid(NAVY), "left": solid(NAVY),
-              "right": dock_right_bar, "topleft": solid(NAVY), "topright": dock_right_bar,
-              "bottomleft": solid(NAVY), "bottomright": dock_right_bar}
-    w_hint = {"top-margin": (1, 8), "bottom-margin": (1, 8), "left-margin": (8, 1), "right-margin": (22, 1)}  # Kickoff logo: 35 px at x=38
-    body += frame_set("west-", w_sizes, w_fill, w_hint, 40)
-    # any other location: navy with a 2 px red frame
-    g_sizes = {k: v for k, v in {"center": (10, 10), "top": (10, 2), "bottom": (10, 2), "left": (2, 10), "right": (2, 10),
-                                 "topleft": (2, 2), "topright": (2, 2), "bottomleft": (2, 2), "bottomright": (2, 2)}.items()}
-    g_fill = {k: (solid(NAVY) if k == "center" else solid(RED)) for k in g_sizes}
-    body += frame_set("", g_sizes, g_fill, {"top-margin": (1, 4), "bottom-margin": (1, 4), "left-margin": (4, 1), "right-margin": (4, 1)}, 80)
-    return svg_doc(400, 110, body)
+def glass_frame(fill, fa, line, glow, cut=10, border=2, margin=8, translucent=False, glow_strength=0.6):
+    """panel / dialog / tooltip background: cut-corner glass frame + neon glow shadow (+ blur mask)"""
+    body = cframe("", 0, fill, fa, line, 1.0, border, cut, margin=margin)
+    if translucent:
+        body += cframe("mask-", 60, "#000000", 1.0, "#000000", 0.0, 0, cut)
+    body += glow_shadow(glow, cut, 22, glow_strength)
+    return svg_doc_x(900, 400, body)
 
 
 def tasks_svg():
-    """widgets/tasks.svg: icontasks frames. Plasma sizes the task icons inside these margins, so they keep the
-    dock icons at ~50 px centred at x=38 (clear of the red bar), like Budgie."""
-    L, R, T, B = 4, 23, 7, 7   # 90 px dock: icons ~50 px, clear of the red bar (Plasma centres them at ~x=44)
-    def frame(prefix, fill, tick=None):
-        sizes = {"center": (10, 10), "top": (10, T), "bottom": (10, B), "left": (L, 10), "right": (R, 10),
-                 "topleft": (L, T), "topright": (R, T), "bottomleft": (L, B), "bottomright": (R, B)}
-        def mk(el):
-            def f(x, y, w, h):
-                s = f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{fill[0]}" fill-opacity="{fill[1]}"/>'
-                if tick and el in ("left", "topleft", "bottomleft"):
-                    s += f'<rect x="{x}" y="{y}" width="3" height="{h}" fill="{tick}"/>'
-                return s
-            return f
-        fills = {el: mk(el) for el in sizes}
-        hints = {"top-margin": (1, T), "bottom-margin": (1, B), "left-margin": (L, 1), "right-margin": (R, 1)}
-        return frame_set(prefix, sizes, fills, hints, {"normal-": 0, "hover-": 30, "focus-": 60, "attention-": 90, "minimized-": 120}[prefix])
-    body = (frame("normal-", (NAVY, 0)) + frame("minimized-", (NAVY, 0)) + frame("hover-", (CY, 0.10))
-            + frame("focus-", (CY, 0.16), tick=CY) + frame("attention-", (RED, 0.22), tick=RED))
-    return svg_doc(400, 160, body)
+    """widgets/tasks.svg for the floating bottom dock: transparent idle, cut-corner cyan hover, active window =
+    cyan plate with a bottom tick, attention = red."""
+    body = ""
+    for i, (prefix, fill, fa, la, tick) in enumerate([
+            ("normal-", NAVY, 0.0, 0.0, None), ("minimized-", NAVY, 0.0, 0.0, None),
+            ("hover-", CY, 0.12, 0.7, None), ("focus-", CY, 0.18, 0.9, ("bottom", CY, 3)),
+            ("attention-", RED, 0.22, 1.0, ("bottom", RED, 3))]):
+        body += cframe(prefix, i * 40, fill, fa, CY if prefix != "attention-" else RED, la, 1, 7, margin=6, tick=tick)
+    return svg_doc(500, 220, body)
 
 
-def chamfered(center, center_a, edge, border=2, cut=10, margin=10, mask=False):
-    """FrameSvg with 45deg cut top-left / bottom-right corners (cut x cut), a `border` px outline on the outer edge.
-    mask=True adds the mask-* elements (opaque, same shape) that KWin's blur uses as blur region."""
-    def body_for(prefix, col_c, a_c, col_e, a_e):
-        sizes = {"center": (10, 10), "top": (10, cut), "bottom": (10, cut), "left": (cut, 10), "right": (cut, 10),
-                 "topleft": (cut, cut), "topright": (cut, cut), "bottomleft": (cut, cut), "bottomright": (cut, cut)}
-        def edge_fn(side):
-            def f(x, y, w, h):
-                s = f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{col_c}" fill-opacity="{a_c}"/>'
-                if a_e > 0:
-                    if side == "top": s += f'<rect x="{x}" y="{y}" width="{w}" height="{border}" fill="{col_e}" fill-opacity="{a_e}"/>'
-                    if side == "bottom": s += f'<rect x="{x}" y="{y + h - border}" width="{w}" height="{border}" fill="{col_e}" fill-opacity="{a_e}"/>'
-                    if side == "left": s += f'<rect x="{x}" y="{y}" width="{border}" height="{h}" fill="{col_e}" fill-opacity="{a_e}"/>'
-                    if side == "right": s += f'<rect x="{x + w - border}" y="{y}" width="{border}" height="{h}" fill="{col_e}" fill-opacity="{a_e}"/>'
-                return s
-            return f
-        def cut_fn(which):
-            def f(x, y, w, h):
-                if which == "topleft":
-                    tri = f"{x + w},{y} {x + w},{y + h} {x},{y + h}"
-                    ln = f'<line x1="{x}" y1="{y + h - border / 2}" x2="{x + w - border / 2}" y2="{y}" stroke="{col_e}" stroke-opacity="{a_e}" stroke-width="{border * 1.4}"/>'
-                else:
-                    tri = f"{x},{y} {x + w},{y} {x},{y + h}"
-                    ln = f'<line x1="{x + border / 2}" y1="{y + h}" x2="{x + w}" y2="{y + border / 2}" stroke="{col_e}" stroke-opacity="{a_e}" stroke-width="{border * 1.4}"/>'
-                return f'<polygon points="{tri}" fill="{col_c}" fill-opacity="{a_c}"/>' + (ln if a_e > 0 else "")
-            return f
-        def square_fn(top, left):
-            def f(x, y, w, h):
-                s = f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{col_c}" fill-opacity="{a_c}"/>'
-                if a_e > 0:
-                    s += f'<rect x="{x}" y="{y if top else y + h - border}" width="{w}" height="{border}" fill="{col_e}" fill-opacity="{a_e}"/>'
-                    s += f'<rect x="{x if left else x + w - border}" y="{y}" width="{border}" height="{h}" fill="{col_e}" fill-opacity="{a_e}"/>'
-                return s
-            return f
-        fills = {"center": solid(col_c, a_c), "top": edge_fn("top"), "bottom": edge_fn("bottom"), "left": edge_fn("left"),
-                 "right": edge_fn("right"), "topleft": cut_fn("topleft"), "bottomright": cut_fn("bottomright"),
-                 "topright": square_fn(True, False), "bottomleft": square_fn(False, True)}
-        hints = {"top-margin": (1, margin), "bottom-margin": (1, margin), "left-margin": (margin, 1), "right-margin": (margin, 1)} if prefix == "" else {}
-        return frame_set(prefix, sizes, fills, hints, 0 if prefix == "" else 40)
-    body = body_for("", center, center_a, edge, 1.0)
-    if mask:
-        body += body_for("mask-", "#000000", 1.0, "#000000", 0.0)
-    return svg_doc(400, 80, body)
+def button_svg():
+    """widgets/button.svg (Plasma components): cut-corner cyan buttons"""
+    body = ""
+    spec = [("normal-", CY, 0.06, 0.5), ("pressed-", CY, 0.30, 1.0), ("hover-", CY, 0.10, 1.0), ("focus-", CY, 0.0, 1.0),
+            ("toolbutton-hover-", CY, 0.12, 0.7), ("toolbutton-pressed-", CY, 0.28, 1.0), ("toolbutton-focus-", CY, 0.0, 1.0)]
+    for i, (prefix, fill, fa, la) in enumerate(spec):
+        body += cframe(prefix, i * 40, fill, fa, CY, la, 1, 6, margin=5)
+    body += cframe("mask-normal-", len(spec) * 40, "#000000", 1.0, "#000000", 0.0, 0, 6)
+    return svg_doc(500, 40 * len(spec) + 40, body)
+
+
+def lineedit_svg():
+    """widgets/lineedit.svg: fields with the bottom-right corner cut (also the lock screen password field)"""
+    body = (cframe("base-", 0, VIEW, 0.85, CY, 0.45, 1, 7, tl=False, margin=6)
+            + cframe("hover-", 40, VIEW, 0.0, CY, 0.8, 1, 7, tl=False, margin=6)
+            + cframe("focus-", 80, VIEW, 0.0, CY, 1.0, 2, 7, tl=False, margin=6)
+            + cframe("focusframe-", 120, VIEW, 0.0, CY, 1.0, 2, 7, tl=False, margin=6)
+            + '  <rect id="hint-focus-over-base" x="0" y="170" width="1" height="1" fill="#000" fill-opacity="0"/>\n')
+    return svg_doc(500, 180, body)
+
+
+def viewitem_svg():
+    """widgets/viewitem.svg: list highlights (Kickoff, KRunner, popups) with a cyan tick on the left"""
+    body = ""
+    for i, (prefix, fa, la, tick) in enumerate([("normal-", 0.0, 0.0, None), ("hover-", 0.10, 0.45, ("left", CY, 3)),
+                                                ("selected-", 0.20, 0.8, ("left", CY, 3)), ("selected+hover-", 0.28, 1.0, ("left", CY, 3))]):
+        body += cframe(prefix, i * 40, CY, fa, CY, la, 1, 6, margin=4, tick=tick)
+    return svg_doc(500, 170, body)
 
 
 def framed(center, edge, border, margin):
@@ -351,28 +374,33 @@ def colors_ini():
 
 
 def write_plasma(out: Path, colors: str):
+    """Plasma desktop theme v3: floating glass panels and popups with cut corners, neon glow shadows and blur masks,
+    cut-corner buttons/fields/list highlights."""
     if out.exists():
         shutil.rmtree(out)
-    (out / "widgets").mkdir(parents=True)
-    (out / "dialogs").mkdir()
-    (out / "widgets/panel-background.svg").write_text(panel_background())
-    # popups, menus, notifications: cut corners + red outline; translucent variants (with blur masks) are used
-    # automatically by Plasma when the compositor can blur
-    (out / "dialogs/background.svg").write_text(chamfered(NAVY, 1.0, RED, 2, 10, 10))
-    (out / "widgets/background.svg").write_text(chamfered(NAVY, 1.0, RED, 2, 10, 10))
-    (out / "widgets/tooltip.svg").write_text(chamfered(VIEW, 1.0, CY, 1, 6, 6))
-    (out / "translucent/dialogs").mkdir(parents=True)
-    (out / "translucent/widgets").mkdir(parents=True)
-    (out / "translucent/dialogs/background.svg").write_text(chamfered(NAVY, 0.82, RED, 2, 10, 10, mask=True))
-    (out / "translucent/widgets/background.svg").write_text(chamfered(NAVY, 0.82, RED, 2, 10, 10, mask=True))
-    (out / "translucent/widgets/tooltip.svg").write_text(chamfered(VIEW, 0.86, CY, 1, 6, 6, mask=True))
-    (out / "widgets/tasks.svg").write_text(tasks_svg())
-    (out / "colors").write_text(colors)
-    (out / "plasmarc").write_text("[Settings]\nFallbackTheme=default\n")
-    (out / "metadata.json").write_text(json.dumps({
-        "KPlugin": {"Id": "CyberNeon", "Name": "CyberNeon", "Version": "1.0", "License": "GPL-2.0-or-later",
+    for d in ("widgets", "dialogs", "translucent/widgets", "translucent/dialogs"):
+        (out / d).mkdir(parents=True)
+    w = lambda rel, s: (out / rel).write_text(s)
+    # panels: opaque fallback + translucent glass (blurred behind, cut-corner mask), red neon glow
+    w("widgets/panel-background.svg", glass_frame(NAVY, 0.97, RED, RED, cut=12, margin=4))
+    w("translucent/widgets/panel-background.svg", glass_frame(NAVY_DEEP, 0.62, RED, RED, cut=12, margin=4, translucent=True))
+    # popups, menus, notifications, widget backgrounds
+    for rel in ("dialogs/background.svg", "widgets/background.svg"):
+        w(rel, glass_frame(NAVY, 0.97, RED, RED, cut=10, margin=10, glow_strength=0.5))
+        w("translucent/" + rel, glass_frame(NAVY_DEEP, 0.72, RED, RED, cut=10, margin=10, translucent=True, glow_strength=0.5))
+    w("widgets/tooltip.svg", glass_frame(VIEW, 0.97, CY, CY, cut=6, border=1, margin=6, glow_strength=0.45))
+    w("translucent/widgets/tooltip.svg", glass_frame(VIEW, 0.8, CY, CY, cut=6, border=1, margin=6, translucent=True, glow_strength=0.45))
+    w("widgets/tasks.svg", tasks_svg())
+    w("widgets/button.svg", button_svg())
+    w("widgets/lineedit.svg", lineedit_svg())
+    w("widgets/viewitem.svg", viewitem_svg())
+    w("colors", colors)
+    w("plasmarc", "[Settings]\nFallbackTheme=default\n\n[ContrastEffect]\nenabled=true\ncontrast=0.9\nintensity=0.9\nsaturation=1.6\n\n"
+                  "[AdaptiveTransparency]\nenabled=true\n\n[BlurBehindEffect]\nenabled=true\n")
+    w("metadata.json", json.dumps({
+        "KPlugin": {"Id": "CyberNeon", "Name": "CyberNeon", "Version": "3.0", "License": "GPL-2.0-or-later",
                     "Category": "", "Website": "",
-                    "Description": "Fan-made netrunner Plasma theme inspired by Cyberpunk 2077 by CD PROJEKT RED",
+                    "Description": "Fan-made netrunner Plasma theme (glass, neon glow) inspired by Cyberpunk 2077 by CD PROJEKT RED",
                     "Authors": [{"Name": "CyberNeon (fan made)"}]},
         "X-Plasma-API-Minimum-Version": "6.0"}, indent=2) + "\n")
 

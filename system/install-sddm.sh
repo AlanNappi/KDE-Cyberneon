@@ -11,8 +11,10 @@ A="$U/.local/share/cyberneon/system"
 
 T=/usr/share/sddm/themes/cyberneon
 rm -rf "$T"; install -d "$T"
-install -m644 "$REPO"/kde/sddm/cyberneon/* "$T/"
-install -m644 "$A/cyberneon-login.png" "$T/background.png"
+install -m644 "$REPO"/kde/sddm/cyberneon/* "$T/"   # (follows the CyberNeonLive.qml link)
+# background: the desktop wallpaper (animated by CyberNeonLive.qml, like the desktop), else the static login image
+if [ -f "$A/cyberneon-wallpaper.png" ]; then install -m644 "$A/cyberneon-wallpaper.png" "$T/background.png"
+else install -m644 "$A/cyberneon-login.png" "$T/background.png"; fi
 
 rm -rf /usr/share/icons/CyberNeon-Cursors
 cp -r "$U/.local/share/icons/CyberNeon-Cursors" /usr/share/icons/CyberNeon-Cursors

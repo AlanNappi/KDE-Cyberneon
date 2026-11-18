@@ -7,15 +7,24 @@
 > Progetto **non ufficiale** e **non commerciale**: non è affiliato, sponsorizzato né approvato da CD PROJEKT RED.
 > L'unico elemento di CD PROJEKT RED incluso è il **logo Arasaka** (`assets/logo/`), usato come omaggio fan made: resta di CD PROJEKT S.A. (vedi [Crediti](#crediti-marchi-e-licenze) e [`NOTICE.md`](NOTICE.md)).
 
-![CyberNeon per KDE Plasma 6](docs/kde-desktop.png)
 
-<sub>Screenshot reale di Plasma 6.8 (laboratorio Docker incluso nel repo: <a href="#laboratorio-test-senza-un-pc-kde">vedi sotto</a>).
-Nel laboratorio l'utente si chiama "netrunner": sul tuo PC la targhetta dell'HUD mostra il tuo nome.</sub>
+![CyberNeon per KDE Plasma 6 — HUD](docs/kde-desktop.png)
 
-Questa è l'edizione **KDE Plasma 6** di CyberNeon, per **Wayland** e **X11**: blu notte, cornici rosso neon con taglio a 45°,
-testi e icone ciano, dock con barra rossa che incrocia la linea neon della barra in alto, HUD, orologio e uno **sfondo animato**.
-Rispetto all'edizione Budgie (repository separato) sfrutta quello che Plasma permette in più: cornici delle finestre in QML,
-widget Qt con angoli tagliati (Kvantum), popup in vetro sfocato, splash di avvio e un effetto glitch sulle finestre.
+<sub>Screenshot reale di Plasma 6.8 (laboratorio Docker del repo, <a href="#laboratorio-test-senza-un-pc-kde">vedi sotto</a>).
+Nel laboratorio l'utente si chiama "netrunner": sul tuo PC il Biomonitor mostra il tuo nome.</sub>
+
+![L'HUD in movimento](docs/kde-desktop.gif)
+
+<sub>L'HUD in movimento: fotogrammi reali catturati nel laboratorio (circa uno ogni mezzo secondo): radar, Chrono, grafici e sfondo.</sub>
+
+Questa è l'edizione **KDE Plasma 6** di CyberNeon (**Wayland** e **X11**). Non è una copia dell'edizione Budgie: usa tutto quello
+che Plasma permette e ridisegna il desktop come un **HUD da videogioco**, con la stessa palette (blu notte, rosso neon, ciano).
+L'unica cosa identica a Budgie è lo **sfondo animato**.
+
+![Sfondo animato CyberNeon Live](docs/kde-live-wallpaper.gif)
+
+<sub>Lo sfondo animato (render reale del componente QML). È lo stesso dell'edizione Budgie, ma disegnato dalla GPU a ogni
+fotogramma dello schermo; gira anche dietro al login, alla splash e al blocco schermo.</sub>
 
 > **Stato**: provata su **Plasma 6.8.3** (Arch Linux) nel laboratorio Docker del repo, con screenshot reali di ogni parte.
 > Su altre distribuzioni con Plasma 6 dovrebbe comportarsi allo stesso modo; se qualcosa non torna, vedi
@@ -23,13 +32,16 @@ widget Qt con angoli tagliati (Kvantum), popup in vetro sfocato, splash di avvio
 
 | | |
 |---|---|
-| ![Finestre](docs/kde-windows.png) **Cornici QML + widget Kvantum** (Dolphin in primo piano, Konsole dietro) | ![Splash](docs/kde-splash.png) **Splash di avvio "jack-in"** |
-| ![Login](docs/kde-sddm.png) **Login SDDM** (modalità prova, quindi senza sfondo) | ![Prompt](docs/prompt.png) **Prompt bash** |
+| ![Finestre](docs/kde-windows.png) **Cornici con alone neon** e app Qt in vetro sfocato | ![Glitch](docs/kde-glitch.png) **Glitch GPU** all'apertura di una finestra (rallentato) |
+| ![Alt+Tab](docs/kde-alttab.png) **Alt+Tab "target lock"** con anteprime dal vivo (strumento di anteprima di KWin, finestre d'esempio, mostrato in alto) | ![Notifica](docs/kde-notification.png) **Notifiche** in basso a sinistra, come chiamate olografiche |
+| ![Blocco schermo](docs/kde-lockscreen.png) **Blocco schermo** sullo sfondo animato | ![Splash](docs/kde-splash.png) **Splash "jack-in"**: il sigillo dello sfondo si accende |
+| ![Login](docs/kde-sddm.png) **Login SDDM**: terminale d'accesso sullo sfondo animato | ![Menu](docs/kde-launcher.png) **Lanciatore** a schermo intero sfocato, ricerca ad angoli tagliati |
 
 ---
 
 ## Indice
 
+- [L'HUD: quattro zone come nel gioco](#lhud-quattro-zone-come-nel-gioco)
 - [Cosa include](#cosa-include)
 - [Requisiti](#requisiti)
 - [Installazione](#installazione)
@@ -46,37 +58,48 @@ widget Qt con angoli tagliati (Kvantum), popup in vetro sfocato, splash di avvio
 
 ---
 
+## L'HUD: quattro zone come nel gioco
+
+Le analisi UX dell'HUD di *Cyberpunk 2077* (vedi [Crediti](#crediti-marchi-e-licenze)) lo descrivono diviso in **zone fisse**: in alto a
+sinistra salute, livello ed esperienza; in alto a destra la minimappa con l'ora e, sotto, la missione attiva. CyberNeon riprende
+questa **organizzazione** con elementi **disegnati da zero** che mostrano **dati veri del PC**. Nessun asset, font o grafica del gioco.
+
+| Zona | Nel gioco (struttura) | Su CyberNeon |
+|---|---|---|
+| **In alto a sinistra** | salute, livello, risorse | pannello fluttuante col **logo** (apre le app) e i desktop virtuali; widget **Biomonitor**: badge "livello" = ore di accensione, barra a segmenti = **RAM libera** (con MB liberi/totali), blocchi = **CPU libera**, linea = **disco**, rete ▼▲, nome dell'operatore |
+| **In alto a destra** | minimappa con l'ora, missione attiva | pannello fluttuante con area di notifica, orologio, blocco/uscita; widget **Radar**: orologio a radar (il fascio ruota coi secondi, rombo rosso = ore, quadrato ciano = minuti, logo al centro) e **tracker degli obiettivi**: la finestra attiva è l'obiettivo, le altre aperte sono i sotto-obiettivi, più il numero del workspace |
+| **In basso al centro** | slot delle abilità | **dock** fluttuante a misura delle icone, con gli slot ad angoli tagliati (attivo = piastra ciano con tacca) |
+| **In basso a destra** | contatore munizioni | widget **Chrono**: l'ora come "contatore", i secondi rimasti come riserva e **60 tacche** che si svuotano a ogni minuto (le ultime dieci in rosso), glitch RGB ogni 12 s |
+| **In basso a sinistra** | messaggi e chiamate | le **notifiche** compaiono qui, in vetro con bordo rosso |
+
 ## Cosa include
 
 | Componente | Descrizione |
 |---|---|
-| **Cornici delle finestre (QML)** | Decorazione KWin `CyberNeon` scritta in QML: cornice rosso neon con **taglio grande a 45°** in alto a sinistra e uno piccolo in basso a destra, linea interna chiara come un tubo al neon, tre quadratini HUD e titolo maiuscolo spaziato, pulsanti con l'angolo tagliato (pieni al passaggio del mouse, X rossa sulla chiusura), segmento ciano "di stato" sul bordo inferiore. Finestre inattive in rosso scuro. In alternativa c'è una versione SVG più semplice (`DECORATION="svg"`). |
-| **Widget Qt (Kvantum)** | Tema Kvantum `CyberNeon`: pulsanti, campi, combo e schede con **angoli tagliati** e contorno ciano, barre degli strumenti blu con riga ciano, menu blu semitrasparenti con bordo rosso e sfocatura, tooltip ciano, barre di progresso **a strisce diagonali**, caselle quadrate e pulsanti di opzione **a rombo**. |
-| **Tema desktop Plasma** | Barra in alto con linea neon (nucleo chiaro e alone), dock con barra rossa; popup, menu e notifiche con **angoli tagliati** e vetro sfocato (le maschere della sfocatura seguono la forma); pulsanti del task manager con l'evidenziazione ciano e la tacca a sinistra. |
-| **Layout** | Barra in alto a tutta larghezza che passa sopra la dock (**la linea neon incrocia la barra rossa**, blocco rosso 76–110 px sopra la linea), dock a sinistra (90 px) con Kickoff col logo CyberNeon, icone cerchiate e pager; nella barra il lanciatore col logo (Application Dashboard), area di notifica, orologio `AAAA-MM-GG  HH:MM`, blocco/uscita. |
-| **Sfondo animato** | Plugin `CyberNeon Live`: lo sfondo CyberNeon con **linea di scansione**, **archi che ruotano** attorno al sigillo, **nodi del grafo che lampeggiano** e bersaglio che pulsa, **pacchetti di dati** lungo il percorso evidenziato, **colonne esadecimali** che scendono e **glitch** periodici. Disattivabile (`ANIMATED_WALLPAPER="no"`). |
-| **Splash di avvio** | Sequenza "**// JACKING IN**": logo che si accende con un flicker, barra di avanzamento a strisce, righe di stato a ogni fase, staffe rosse agli angoli. |
-| **Effetto glitch** | Effetto KWin: le finestre si aprono e si chiudono con un **flicker neon** e uno scatto laterale (sostituisce l'animazione "scale"). Disattivabile (`GLITCH_EFFECT="no"`). |
-| **Tema globale** | Pacchetto *Look and Feel* `CyberNeon`, selezionabile in *Impostazioni di sistema → Tema globale*. |
-| **Widget HUD e orologio** | `CyberNeon HUD` (CPU, RAM e disco con i sensori di Plasma, blocco a strisce, targhetta verticale) e `CyberNeon Clock` (ora ciano in Orbitron, data rossa). Funzionano su Wayland. |
-| **Icone, cursori, font, sfondo, prompt** | Come nell'edizione Budgie: icone cerchiate originali + Papirus-Dark con cartelle "cyber", cursori HUD con bagliore, Chakra Petch/Rajdhani/Orbitron, prompt bash rosso/ciano. |
-| **Konsole, Dolphin, app GTK** | Profilo Konsole `CyberNeon`; Dolphin trasparente al 90 % (regola KWin); tema GTK `CyberNeon` per le app GTK. |
-| **Blocco schermo, login, GRUB** | Blocco schermo con lo sfondo di login; tema SDDM `cyberneon`; tema GRUB. |
+| **Sfondo animato `CyberNeon Live`** | Identico all'edizione Budgie: linea di scansione, archi che ruotano attorno al sigillo, nodi che lampeggiano e bersaglio che pulsa, pacchetti di dati, colonne esadecimali, glitch con strisce dello sfondo spostate. Un unico componente QML (`kde/shared/CyberNeonLive.qml`) usato da sfondo, login, splash e blocco schermo. Disattivabile (`ANIMATED_WALLPAPER="no"`). |
+| **Cornici delle finestre (QML)** | Barra del titolo scura dentro un **tubo neon rosso** (taglio a 45° grande in alto a sinistra, piccolo in basso a destra) con un **vero alone sfocato dalla GPU** attorno alla finestra; linguetta rossa con i tre quadratini HUD, titolo ciano maiuscolo, pulsanti ad angolo tagliato che si illuminano. Quando la finestra prende il focus l'alone **si accende con un flicker** e un'**onda ciano** attraversa la barra. |
+| **Pannelli e popup in vetro** | Pannelli **fluttuanti** e menu, popup e notifiche in **vetro sfocato** con angoli tagliati e **alone neon** (disegnato da KWin come ombra, segue anche i tagli a 45°). Pulsanti, campi e selezioni delle liste di Plasma ad angoli tagliati. |
+| **Widget HUD** | **Biomonitor**, **Radar + tracker degli obiettivi**, **Chrono** (vedi sopra), tutti con bagliore GPU. |
+| **Glitch delle finestre (shader GLSL)** | Effetto KWin con un **fragment shader**: all'apertura e alla chiusura la finestra si sdoppia in rosso/ciano, si spezza in strisce spostate, con scanline e lampi ciano, e si ricompone in ~0,4 s. Se gli shader non sono disponibili ripiega su flicker + scatto laterale. |
+| **Alt+Tab "target lock"** | Selettore di finestre con **anteprime dal vivo** in schede ad angoli tagliati; la finestra scelta ha il "lock" rosso (cornice spessa, staffe agli angoli, etichetta TARGET). |
+| **App Qt in vetro (Kvantum)** | Dolphin, Impostazioni e le altre app Qt con sfondo **semitrasparente sfocato**, pulsanti e campi ad angoli tagliati, menu rossi, barre a strisce. Konsole sfocata e semitrasparente. |
+| **Splash, login, blocco schermo** | Splash "**// JACKING IN**" in cui il sigillo dello sfondo animato si "accende"; login SDDM con un terminale d'accesso in vetro e alone sullo sfondo animato; blocco schermo di Plasma sullo sfondo animato, stilizzato dal tema. |
+| **Icone, cursori, font, prompt, GTK, GRUB** | Come nell'edizione Budgie: icone cerchiate + Papirus-Dark con cartelle "cyber", cursori HUD, Chakra Petch / Rajdhani / Orbitron, prompt bash rosso/ciano, tema GTK, tema GRUB. |
 
 ## Requisiti
 
-- **KDE Plasma 6** (KDE neon, Kubuntu, Fedora KDE, Arch, openSUSE…), sessione **Wayland** o **X11**.
-- `python3` con **Pillow** e **pycairo**, `curl`; consigliati **kvantum** (widget Qt in stile HUD), **kdeplasma-addons**
-  (Application Dashboard per il lanciatore col logo) e **JetBrainsMono Nerd Font** (prompt e sfondo).
+- **KDE Plasma 6** (KDE neon, Kubuntu, Fedora KDE, Arch, openSUSE…), sessione **Wayland** o **X11**, con **OpenGL** (per alone,
+  sfocature e shader; qualsiasi scheda video degli ultimi anni).
+- `python3` con **Pillow** e **pycairo**, `curl`; consigliati **kvantum** (app Qt in vetro), **kdeplasma-addons** (Application
+  Dashboard per il lanciatore col logo) e **JetBrainsMono Nerd Font** (prompt e sfondo).
 
   ```bash
   sudo apt install python3-pil python3-cairo curl qt6-style-kvantum kdeplasma-addons-data   # Debian/Ubuntu/Kubuntu/neon
   sudo dnf install python3-pillow python3-cairo curl kvantum kdeplasma-addons               # Fedora
   sudo pacman -S python-pillow python-cairo curl kvantum kdeplasma-addons                   # Arch
   ```
-  (i nomi dei pacchetti Kvantum e addons cambiano un po' tra distribuzioni: se uno non esiste, cerca "kvantum" /
-  "kdeplasma-addons" nel gestore pacchetti). Senza Kvantum le app Qt usano Breeze con i colori CyberNeon; senza
-  kdeplasma-addons il lanciatore col logo usa Kicker o Kickoff.
+  (i nomi dei pacchetti cambiano un po' tra distribuzioni). Senza Kvantum le app Qt usano Breeze con i colori CyberNeon
+  e Dolphin diventa trasparente con una regola di KWin; senza kdeplasma-addons il lanciatore usa Kicker o Kickoff.
 - Per il tema GRUB: `grub-mkfont` (o `grub2-mkfont`). Prima installazione: Internet per Papirus (~33 MB).
 
 ## Installazione
@@ -89,26 +112,26 @@ cd cyberneon-kde
 
 | Opzione | Effetto |
 |---|---|
-| `--no-layout` | non tocca pannelli e widget (applica temi, colori, icone, cursori, font, cornici, Kvantum, Konsole, Dolphin, prompt) |
+| `--no-layout` | non tocca pannelli e widget (applica temi, colori, icone, cursori, font, cornici, effetti, Kvantum, Konsole, prompt) |
 | `--skip-papirus` | non scarica Papirus |
 | `-h` | aiuto |
 
-> ⚠ Senza `--no-layout` i pannelli attuali vengono sostituiti dalla barra e dalla dock CyberNeon (la configurazione
-> precedente è nel backup: `uninstall.sh` la ripristina). Dopo l'installazione conviene fare **logout e login**.
+> ⚠ Senza `--no-layout` i pannelli attuali vengono sostituiti dall'HUD CyberNeon (la configurazione precedente è nel backup:
+> `uninstall.sh` la ripristina). Dopo l'installazione conviene fare **logout e login**.
 
 ## Configurazione (`cyberneon.conf`)
 
 | Variabile | Default | Significato |
 |---|---|---|
-| `LOGO` | `assets/logo/arasaka-logo.webp` | logo al centro dello sfondo, sul lanciatore della barra e nella splash (tinto rosso neon). Il logo Arasaka incluso è di CD PROJEKT S.A.; vuoto = stemma originale CyberNeon |
-| `LABEL` | `A R A S A K A` | scritta sotto lo stemma dello sfondo |
-| `HUD_LABEL` | *(vuoto)* | targhetta del widget HUD; vuoto = nome utente in maiuscolo |
+| `LOGO` | `assets/logo/arasaka-logo.webp` | logo al centro dello sfondo, sul badge del lanciatore e al centro del radar (tinto rosso neon). Il logo Arasaka incluso è di CD PROJEKT S.A.; vuoto = stemma originale CyberNeon |
+| `LABEL` | `A R A S A K A` | scritta sotto il sigillo dello sfondo |
+| `HUD_LABEL` | *(vuoto)* | nome dell'operatore nel Biomonitor; vuoto = nome utente in maiuscolo |
 | `WALLPAPER` | `cyberneon-arasaka-red.png` | file creato in `~/Pictures/Wallpapers` |
-| `DECORATION` | `qml` | cornici delle finestre: `qml` (taglio grande, dettagli HUD) o `svg` (Aurorae SVG, più semplice) |
-| `ANIMATED_WALLPAPER` | `yes` | sfondo animato `CyberNeon Live` o immagine statica (`no`) |
-| `GLITCH_EFFECT` | `yes` | effetto glitch su apertura/chiusura delle finestre |
-| `DOLPHIN_OPACITY` | `90` | opacità di Dolphin in percentuale |
-| `PINNED` | impostazioni, file manager, browser, Konsole, LibreOffice Calc | lanciatori della dock (sintassi di Plasma) |
+| `DECORATION` | `qml` | cornici: `qml` (alone neon, animazioni) o `svg` (Aurorae SVG, più semplice) |
+| `ANIMATED_WALLPAPER` | `yes` | sfondo animato (anche sul blocco schermo) o immagine statica (`no`) |
+| `GLITCH_EFFECT` | `yes` | glitch GPU all'apertura/chiusura delle finestre |
+| `DOLPHIN_OPACITY` | `90` | opacità di Dolphin (regola KWin) usata **solo senza Kvantum** |
+| `PINNED` | impostazioni, file manager, browser, Konsole, LibreOffice Calc | app nella dock (sintassi di Plasma) |
 | `UI_FONT`, `FIXED_FONT`, `TITLE_FONT` | Chakra Petch 10 / JetBrainsMono Nerd Font 10 / Chakra Petch Bold 10 | font |
 
 ## Cosa fa `install.sh`
@@ -116,44 +139,44 @@ cd cyberneon-kde
 1. **Controlli** (Plasma 6, strumenti, Python) e larghezza logica dello schermo principale (`kscreen-doctor`).
 2. **Backup** in `~/.local/share/cyberneon/backups/<data-ora>/` di `kdeglobals`, `kwinrc`, `kwinrulesrc`, `plasmarc`,
    `plasmashellrc`, `plasma-org.kde.plasma.desktop-appletsrc`, `kcminputrc`, `konsolerc`, `ksplashrc`, `kscreenlockerrc`,
-   impostazioni GTK, `Kvantum/kvantum.kvconfig` e `~/.bashrc` (la prima volta anche in `backups/pristine/`).
-3. **Font**, **Papirus**, **tema GTK** (da `third_party/Pocillo-dark`) e palette libadwaita.
-4. **Icone** `CyberNeon-Icons` (con il logo tinto e l'icona `cyberneon-launcher`) e **cursori** `CyberNeon-Cursors`.
-5. **Sfondo** e asset di login/GRUB.
-6. **Temi KDE**: schema colori, tema desktop Plasma (con popup in vetro), cornici SVG Aurorae, **cornici QML**
-   (copiate in `~/.local/share/kwin/decorations/`), font e decorazione in `kdeglobals`/`kwinrc`.
-7. **Kvantum** (se installato): tema in `~/.config/Kvantum/CyberNeon`, `widgetStyle=kvantum`.
-8. **Sfondo animato**, **tema globale + splash**, **blocco schermo**, **effetto glitch** (caricato subito via D-Bus).
-9. **Regola KWin** per Dolphin, **Konsole**, impostazioni **GTK**, **prompt** bash.
-10. **Widget** HUD, orologio e blocco rosso (`kpackagetool6`).
-11. **Layout** (`kde/layout.js`): barra, dock, lanciatori, sfondo, HUD e orologio; pannelli opachi.
-12. **Ricarica** di KWin e riavvio di plasmashell.
+   `plasmanotifyrc`, impostazioni GTK, `Kvantum/kvantum.kvconfig` e `~/.bashrc` (la prima volta anche in `backups/pristine/`).
+3. **Font**, **Papirus**, **tema GTK** (da `third_party/Pocillo-dark`), **icone**, **cursori**.
+4. **Sfondo** (senza il raccordo per i pannelli di Budgie) e asset di login/GRUB.
+5. **Temi KDE**: schema colori, tema Plasma in vetro con alone, cornici QML (copiate in `~/.local/share/kwin/decorations/`).
+6. **Kvantum** (se installato): tema `CyberNeon` con finestre in vetro sfocato.
+7. **Sfondo animato**, **tema globale + splash**, **blocco schermo** sullo sfondo animato, **Alt+Tab** (`~/.local/share/kwin/tabbox/cyberneon`),
+   **glitch GPU** (caricato subito via D-Bus), sfocatura e contrasto di KWin attivi.
+8. **Konsole**, impostazioni **GTK**, **prompt** bash; regola di trasparenza per Dolphin solo senza Kvantum.
+9. **Widget HUD** (`kpackagetool6`), notifiche in basso a sinistra.
+10. **Layout HUD** (`kde/layout.js`): i tre pannelli fluttuanti, sfondo, Biomonitor, Radar e Chrono; pannelli in vetro.
+11. **Ricarica** di KWin e riavvio di plasmashell.
 
 ## Schermata di login (SDDM) e GRUB
 
 ```bash
-sddm-greeter-qt6 --test-mode --theme kde/sddm/cyberneon   # anteprima senza cambiare niente
-sudo bash system/install-sddm.sh                          # tema SDDM
+sudo bash system/install-sddm.sh                          # tema SDDM con lo sfondo animato
 sudo bash system/install-grub.sh                          # tema GRUB (menu visibile 5 secondi)
 ```
 
-`install-sddm.sh` copia il tema in `/usr/share/sddm/themes/cyberneon` con lo sfondo di login, cursori e font, e scrive
-`/etc/sddm.conf.d/10-cyberneon.conf` (annulla: `sudo rm /etc/sddm.conf.d/10-cyberneon.conf`).
+`install-sddm.sh` copia il tema in `/usr/share/sddm/themes/cyberneon` (con lo sfondo animato e il tuo sfondo), cursori e font, e scrive
+`/etc/sddm.conf.d/10-cyberneon.conf` (annulla: `sudo rm /etc/sddm.conf.d/10-cyberneon.conf`). Anteprima senza cambiare niente:
+`sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/cyberneon`.
 `install-grub.sh` installa il tema in `/boot/grub/themes/cyberneon`, imposta `GRUB_THEME`, `GRUB_TIMEOUT_STYLE=menu`,
 `GRUB_TIMEOUT=5` e lancia `update-grub` (su Fedora/openSUSE poi `sudo grub2-mkconfig -o /boot/grub2/grub.cfg`).
 Annulla: `sudo cp /etc/default/grub.bak-cyberneon /etc/default/grub` e rigenera la configurazione.
 
 ## Primo avvio e verifica
 
-1. `./install.sh` termina e `layout.js` stampa `panels <id> <id>`;
-2. cornici: taglio a 45° grande, tre quadratini, titolo maiuscolo, pulsanti dentro la barra del titolo;
-3. pannelli: la linea neon della barra in alto incrocia la barra rossa della dock, blocco rosso e raccordo nell'angolo;
-4. sfondo animato in movimento, HUD con valori che si aggiornano, orologio in alto a destra;
-5. app Qt (Dolphin, Impostazioni) con pulsanti ad angoli tagliati (serve Kvantum);
-6. apri e chiudi una finestra: flicker glitch;
-7. login SDDM in `--test-mode`.
+1. `./install.sh` termina e `layout.js` stampa `panels <id> <id> <id>`;
+2. in alto a sinistra il logo e il Biomonitor, in alto a destra notifiche/orologio e il radar, la dock in basso, il Chrono in basso a destra;
+3. lo sfondo si muove (scansione, archi, rete) e ogni tanto fa un glitch;
+4. le finestre hanno l'alone rosso; cliccandole l'alone si riaccende con un flicker;
+5. apri e chiudi una finestra: glitch rosso/ciano;
+6. Alt+Tab: schede con anteprime e "TARGET" rosso sulla finestra scelta;
+7. blocco schermo (Meta+L): lo sfondo animato è anche lì.
 
-Errori dei widget e delle cornici: `journalctl --user -b | grep -iE "cyberneon|qml"`.
+Errori: `journalctl --user -b | grep -iE "cyberneon|qml"`. Per vedere gli errori dei widget QML in un terminale serve
+`QT_FORCE_STDERR_LOGGING=1`.
 
 ## Laboratorio: test senza un PC KDE
 
@@ -164,9 +187,10 @@ OpenGL sul nodo di rendering della GPU del PC). Esegue il vero `install.sh` e sa
 bash lab/run-lab.sh     # serve Docker (utente nel gruppo docker); la prima volta scarica ~2 GB
 ```
 
-Produce `01-plasma-stock.png` (Plasma di partenza), `02-cyberneon-desktop.png` e `02b-…` (due istanti dello sfondo
-animato), `03-cyberneon-windows.png` (Dolphin e Konsole), `05-splash.png`, `06-launcher-menu.png`, `04-sddm-test.png`,
-più `install.log`, `qmllint.txt` ed `effects.txt` (verifica che l'effetto glitch sia caricato). Il tuo sistema non viene toccato.
+Produce: `02-cyberneon-desktop.png` (+ fotogrammi in `gif/`), `03-cyberneon-windows.png`, `07-glitch-open.png` (animazioni
+rallentate 12 volte), `08-alttab.png` (strumento di anteprima ufficiale di KWin, con finestre d'esempio), `06-launcher-menu.png`,
+`09-notification.png`, `10-lockscreen.png`, `05-splash.png`, `04-sddm-test.png`, più `install.log`, `effects.txt` (effetti caricati),
+`qmllint.txt` e `plasmashell-errors.txt`. Il tuo sistema non viene toccato.
 
 ## Disinstallazione
 
@@ -182,17 +206,19 @@ cyberneon-kde/
 ├── install.sh / uninstall.sh      installazione e ripristino
 ├── cyberneon.conf                 configurazione
 ├── kde/
-│   ├── layout.js                  pannelli, lanciatori, sfondo, widget (Plasma scripting)
-│   ├── decoration/cyberneon/      cornici delle finestre in QML (KWin)
-│   ├── wallpaper/                 sfondo animato "CyberNeon Live" (QML)
+│   ├── shared/CyberNeonLive.qml   sfondo animato (unico componente, collegato in wallpaper, splash e SDDM)
+│   ├── layout.js                  layout HUD: pannelli, widget, sfondo (Plasma scripting)
+│   ├── decoration/cyberneon/      cornici delle finestre in QML (alone neon, animazioni)
+│   ├── wallpaper/                 plugin dello sfondo animato
 │   ├── lookandfeel/               tema globale + splash "jack-in"
-│   ├── effects/cyberneon_glitch/  effetto glitch apertura/chiusura (KWin, JavaScript)
-│   ├── plasmoids/                 widget HUD, orologio, blocco rosso (QML)
+│   ├── effects/cyberneon_glitch/  glitch GPU (JavaScript + shader GLSL in contents/shaders)
+│   ├── tabbox/cyberneon/          Alt+Tab "target lock"
+│   ├── plasmoids/                 widget HUD: biomonitor, radar, chrono
 │   ├── konsole/                   palette e profilo Konsole
 │   └── sddm/cyberneon/            tema SDDM (Qt 6)
 ├── scripts/
-│   ├── make_kde_themes.py         cornici SVG Aurorae + tema desktop Plasma + schema colori
-│   ├── make_kvantum.py            tema Kvantum (widget Qt)
+│   ├── make_kde_themes.py         tema Plasma (vetro, alone, angoli tagliati) + cornici SVG + schema colori
+│   ├── make_kvantum.py            tema Kvantum (app Qt in vetro)
 │   ├── build_theme.py             tema GTK
 │   ├── make_icons.py, make_logo_icon.py, make_cursors.py, make_wallpaper.py, make_system_assets.py
 │   └── install_fonts.sh, install_papirus.sh
@@ -200,34 +226,38 @@ cyberneon-kde/
 ├── theme/, config/, system/       CSS GTK, prompt, SDDM/GRUB
 ├── third_party/Pocillo-dark/      base del tema GTK (GPL-2.0)
 ├── assets/fonts, assets/logo      font (OFL) e logo Arasaka (© CD PROJEKT S.A.)
-└── docs/                          screenshot
+└── docs/                          screenshot e GIF
 ```
 
 ## Personalizzazione
 
-- **Palette**: rosso neon `#ff2a4f`, ciano `#5beedc`, blu `#111e29` — costanti in testa a `make_kde_themes.py`,
+- **Palette**: rosso neon `#ff2a4f`, ciano `#5beedc`, blu `#0b1620`/`#111e29` — costanti in testa a `make_kde_themes.py`,
   `make_kvantum.py`, ai file QML e ai CSS GTK.
-- **Cornici QML**: `titleH`, `cut`, `brCut`, bordi e colori in testa a `kde/decoration/cyberneon/contents/ui/main.qml`.
-- **Sfondo animato**: velocità e oggetti in `kde/wallpaper/org.cyberneon.wallpaper/contents/ui/main.qml`
-  (coordinate dello sfondo 3840×2160).
-- **Effetto glitch**: durate in `kde/effects/cyberneon_glitch/contents/code/main.js`.
-- **Dock e barra**: `DOCK` e `BAR` in `kde/layout.js`; margini delle icone in `tasks_svg()` di `make_kde_themes.py`.
+- **Sfondo animato**: velocità e oggetti in `kde/shared/CyberNeonLive.qml` (coordinate dello sfondo 3840×2160).
+- **Cornici**: `pad` (ampiezza dell'alone), `titleH`, `cut`, colori e animazione di accensione in testa a
+  `kde/decoration/cyberneon/contents/ui/main.qml`.
+- **Glitch**: intensità nello shader `kde/effects/cyberneon_glitch/contents/shaders/glitch_core.frag`, durate in `contents/code/main.js`.
+- **Widget HUD**: `kde/plasmoids/org.cyberneon.*/contents/ui/main.qml`; posizioni in `kde/layout.js`.
+- **Vetro e alone di pannelli/popup**: `glass_frame()` e `glow_shadow()` in `make_kde_themes.py`.
 
 ## Note tecniche
 
 Cose verificate nel laboratorio:
-- **Ordine dei pannelli**: Plasma calcola posizione e offset di un pannello rispetto a quelli creati prima. La barra in alto
-  viene creata **prima** della dock, così è larga tutto lo schermo e la dock parte sotto (come su Budgie).
-- Il bordo di un pannello che tocca un altro pannello viene disattivato: il blocco rosso 76–110 px è un piccolo widget
-  (`org.cyberneon.redblock`) che si posiziona in coordinate di schermo.
-- Le icone del task manager sono centrate sullo spessore della dock: la loro dimensione si regola con i margini di
-  `widgets/tasks.svg`. Le ombre del tema sui pannelli opachi non vengono disegnate, quindi la barra rossa resta dentro la dock.
-- `kpackagetool6` rifiuta i pacchetti `KWin/Decoration` (anche quello ufficiale *plastik*): la decorazione QML viene
-  **copiata** in `~/.local/share/kwin/decorations/`, dove KWin la trova.
+- **Alone delle finestre**: le decorazioni QML hanno un'area `padding` che KWin trasforma nell'**ombra** della finestra; l'alone è
+  disegnato lì con `MultiEffect` (sfocatura GPU). Non è cliccabile e sparisce sulle finestre massimizzate.
+- **Alone di pannelli e popup**: elementi `shadow-*` del tema Plasma (PNG generati con la sfocatura) con `shadow-hint-*-margin`
+  più piccoli dei riquadri, così l'ombra entra di qualche pixel sotto la finestra e segue anche i tagli a 45°. La sfocatura
+  dietro al vetro usa gli elementi `mask-*` (stessa forma, angoli tagliati compresi).
+- **Shader negli effetti JavaScript di KWin**: si caricano con `effect.addFragmentShader(Effect.MapTexture | Effect.Modulate, "file.frag")`
+  (metodo dell'oggetto `effect`, non una funzione globale) dalla cartella `contents/shaders/`, e si animano con
+  `{type: Effect.ShaderUniform, fragmentShader: id, uniform: "nome"}`. Con OpenGL core serve `#version 140`; c'è anche la versione 1.10.
+- **Pannelli fluttuanti sullo stesso bordo**: con `lengthMode = "fit"` e allineamenti diversi possono stare in due sulla stessa riga.
+- **Widget**: una proprietà chiamata `left` in un `PlasmoidItem` blocca il widget ("Cannot override FINAL property").
+- **Alt+Tab**: il selettore si prova senza tastiera con `/usr/lib/kwin-tabbox-preview <percorso>/contents/ui/main.qml`.
+- **Blocco schermo e OSD** in Plasma 6.8 non si personalizzano più dal tema globale: il blocco schermo usa il plugin dello sfondo
+  (quindi è animato) e il tema Plasma per campi e pulsanti.
+- `kpackagetool6` rifiuta i pacchetti `KWin/Decoration`: la decorazione viene **copiata** in `~/.local/share/kwin/decorations/`.
 - Gli effetti KWin copiati con KWin già avviato si caricano al login successivo: l'installer li carica subito via D-Bus.
-- L'*Application Dashboard* su Plasma 6 sta in `kdeplasma-addons`; `layout.js` ripiega su Kicker/Kickoff.
-- Le coordinate dei widget sul desktop sono relative all'area libera dai pannelli.
-- Nel `Canvas` QML i font si indicano senza virgolette singole (`"bold 15px \"Chakra Petch\""`).
 
 ## Crediti, marchi e licenze
 
@@ -260,3 +290,12 @@ Cose verificate nel laboratorio:
 <sub><b>Fan made</b> da un grandissimo fan di <i>Cyberpunk 2077</i>. CyberNeon è un progetto non ufficiale e non commerciale,
 ispirato a <i>Cyberpunk 2077</i> di <b>CD PROJEKT RED</b>. <i>Cyberpunk 2077</i>, Arasaka e tutti i nomi, loghi e marchi collegati
 appartengono a <b>CD PROJEKT S.A.</b> Questo progetto non è affiliato, sponsorizzato né approvato da CD PROJEKT RED.</sub>
+
+### Riferimenti per la disposizione dell'HUD
+
+La divisione in zone dell'HUD di CyberNeon KDE si basa su queste analisi pubbliche dell'interfaccia di *Cyberpunk 2077*
+(design e HUD originali: **CD PROJEKT RED**). CyberNeon ne riprende solo l'organizzazione, con grafica disegnata da zero:
+- [A UX analysis of Cyberpunk 2077's HUD (Medium / Super Jump)](https://medium.com/super-jump/a-ux-analysis-of-cyberpunk-2077s-hud-f74afe6b9961)
+- [Cyberpunk 2077 UX/UI critique (Interface In Game)](https://interfaceingame.com/articles/cyberpunk-2077-ux-ui-critique)
+- [Cyberpunk 2077 UX analysis (trashbox.ru)](https://trashbox.ru/link/cyberpunk-2077-ux-analysis)
+- [Cyberpunk 2077 (HUDS+GUIS)](https://www.hudsandguis.com/home/2019/cyberpunk-2077)

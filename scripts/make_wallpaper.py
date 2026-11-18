@@ -17,6 +17,7 @@ from PIL import Image, ImageChops
 _ap = argparse.ArgumentParser()
 _ap.add_argument("out")
 _ap.add_argument("--login", action="store_true")
+_ap.add_argument("--no-fillet", action="store_true", help="no red panel fillet (KDE floating panels)")
 _ap.add_argument("--label", default="N E T R U N N E R")
 _ap.add_argument("--logo", default="")
 _ap.add_argument("--monitor-width", type=int, default=1920)
@@ -26,6 +27,7 @@ OUT = ARGS.out
 W, H = 3840, 2160
 S = W / ARGS.monitor_width   # image px per screen px on the primary monitor
 LOGIN = ARGS.login
+FILLET = not (ARGS.login or ARGS.no_fillet)
 random.seed(2077)
 
 def rgb(h, a=1.0):
@@ -197,7 +199,7 @@ cr.restore()
 text("!! INTRUSION COUNTERMEASURES ARMED !!", 1020, by + 28, RED, 0.95, UI, 32, True)
 
 # ------------------------------------------------------------- 8. red fillet (panel corner), desktop only
-if not LOGIN:
+if FILLET:
     poly([(90*S, 34*S), (110*S, 34*S), (90*S, 54*S)], RED, 1)
 
 base = OUT + ".tmp.png"
@@ -229,7 +231,7 @@ img = ImageChops.subtract(img, Image.merge("RGB", (scan,)*3))
 crisp = Image.open(base).convert("RGB")
 img.paste(crisp.crop((260, 334, 1270, 374)), (260, 334))
 # keep the panel fillet crisp
-if not LOGIN:
+if FILLET:
     _b = (int(85*S), int(30*S), int(115*S), int(57.5*S))
     img.paste(Image.open(base).convert("RGB").crop(_b), _b[:2])
 img.save(OUT, optimize=True)
