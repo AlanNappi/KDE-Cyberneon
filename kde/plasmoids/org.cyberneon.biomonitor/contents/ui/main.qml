@@ -53,6 +53,7 @@ PlasmoidItem {
         onNewData: (source, data) => {
             disconnectSource(source);
             if (source.indexOf("cn-tcc") >= 0) root.readTcc(data.stdout || "");
+            else if (source.indexOf("cyberneon-culprit") >= 0) root.readCulprit(data.stdout || "");
         }
     }
     function run(tool, args) { exec.connectSource('"$HOME/.local/share/cyberneon/bin/' + tool + '" ' + args + ' #' + (++seq)) }
@@ -66,9 +67,20 @@ PlasmoidItem {
         catch (e) { tccProfile = "" }
     }
     Timer { interval: 60000; repeat: true; running: true; triggeredOnStart: true; onTriggered: root.run("cn-tcc", "") }
+    // during an alert, who to blame: the radar's last scan names the heaviest program (bin/cn-threats)
+    property var culprit: ({})
+    Timer {
+        interval: 3000; repeat: true; running: reactor.alert; triggeredOnStart: true
+        onTriggered: exec.connectSource('cat "$XDG_RUNTIME_DIR/cyberneon-culprit.json" #' + (++root.seq))
+    }
+    function readCulprit(out) { try { culprit = JSON.parse(out) } catch (e) { culprit = {} } }
+    readonly property string blame: {
+        const who = String((reactor.reason.indexOf("RAM") === 0 ? culprit.ram : culprit.cpu) || "");
+        return who ? "  //  " + who.toUpperCase() : "";
+    }
     Component.onCompleted: run("cn-kwin-alert", "false")     // clears a state left by a previous session
 
-    readonly property string statusText: reactor.alert ? "!! OVERLOAD  //  " + reactor.reason
+    readonly property string statusText: reactor.alert ? "!! OVERLOAD  //  " + reactor.reason + blame
                                        : power.lowPower ? "LOW POWER  //  ANIMATION OFF"
                                        : tccProfile ? "TCC  //  " + tccProfile
                                        : "LINK STABLE  //  ID 0x" + (label.length * 4097 + 2077).toString(16).toUpperCase()

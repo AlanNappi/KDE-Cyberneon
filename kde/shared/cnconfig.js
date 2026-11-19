@@ -11,3 +11,5 @@ var TRACE_MBPS = 5;         // MB/s of network traffic that raises "trace progra
 var CYBER_OSD = false;      // Quickhack OSD replaces Plasma's native OSD
 var SOUND_FX = false;       // CyberNeon sound effects
 var LOW_POWER = 20;         // on battery below this percentage animations stop (0 = never)
+var SENTINEL = true;        // the radar flags intrusion events (USB, wrong passwords, SSH, open ports, new devices)
+var QUICKHACK = true;       // a click on a radar contact can close that program (after a confirmation)

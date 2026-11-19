@@ -56,7 +56,7 @@ The in-game HUD keeps each kind of information in a fixed spot, and UX write-ups
 | Zone | In the game | In CyberNeon |
 |---|---|---|
 | Top left | health, level, resources | A floating panel with the logo (opens your apps) and the virtual desktops, plus the **Biomonitor**. Its "level" badge is your uptime in hours, the segmented bar is free RAM, the blocks are free CPU, then disk, network and your name. |
-| Top right | minimap with the time, active quest | A floating panel with tray, clock and lock/logout, plus the **Radar**: the sweep follows the seconds, a red diamond marks the hour and a cyan square the minute. Below it, the objective tracker treats the active window as your objective and the other open windows as sub-objectives. |
+| Top right | minimap with the time, active quest | A floating panel with tray, clock and lock/logout, plus the **threat radar**: programs that weigh on your PC are contacts, the heavier the closer to the center, arrows on the rim are programs moving data and red diamonds are intrusions ([details](#threat-radar)). Below it, the objective tracker treats the active window as your objective and the other open windows as sub-objectives. |
 | Bottom center | ability slots | A floating dock sized to its icons, with chamfered slots. The active one becomes a cyan plate. |
 | Bottom right | ammo counter | The **Chrono**. The time is the counter, the seconds left are the reserve, and 60 notches empty out over the minute, with the last ten in red. It glitches every 12 seconds, or every 2.5 during an alert. |
 | Bottom left | messages and calls | Notifications land here, on glass with a red border. |
@@ -72,9 +72,25 @@ The in-game HUD keeps each kind of information in a fixed spot, and UX write-ups
 | ![Alert mode](docs/kde-alert.png) **Alert mode** | ![Live terminal](docs/kde-live-terminal.png) **Live terminal** on the wallpaper |
 | ![Quickhack OSD](docs/kde-osd.png) **Quickhack OSD** | ![Battery](docs/kde-battery.png) **CELL CHARGE** and TUXEDO profile (both simulated in the lab) |
 
+### Threat radar
+
+![Threat radar](docs/kde-radar.png)
+
+In the game the minimap tells you who's around and how dangerous they are. Here the enemies are whatever slows your PC down, uses your network or tries to get in.
+
+- **Contacts.** Every program with a real load is a dot, and all the processes of one program count as one, so Firefox's twenty processes are a single contact. The closer to the center, the heavier: a whole CPU core or 30% of the RAM puts it in the red. Bigger dots use more memory, the sweep lights them up as it passes, and the yellow and red ones carry their name and load, like `FIREFOX 92%`. When nothing heavy is running the radar is empty and says `ZONE CLEAR`.
+- **Traffic.** A program downloading gets an arrow pointing in, one uploading an arrow pointing out, and the faster it goes the longer the arrow. The line under the radar names the top downloader and uploader.
+- **Sentinel.** A red diamond with a short tag (`USB`, `AUTH`, `SSH`, `PORT`, `LAN`) blinks on the rim for a minute and the line under the radar says what happened and when: a USB device plugged in (a stick that also declares a keyboard is reported as a keyboard, the "BadUSB" trick), a wrong password for sudo, su, the lock screen or the login screen, an SSH login or a failed one, a program opening a port to the network, a device showing up on your network for the first time.
+- **The alert names the culprit**, see below.
+- **Quickhack.** Click a contact and a panel opens with two quickhacks: **OVERLOAD** closes the program the normal way, so a browser still saves its session, and **FLATLINE** kills every process of it, losing unsaved work. Nothing happens until you press **UPLOAD** to confirm, then an upload bar fills and the program goes down. The desktop session itself (window manager, panel, sound, the HUD) and other users' processes show up as **PROTECTED** and can't be touched. `QUICKHACK="no"` turns it off.
+
+![Quickhack](docs/kde-quickhack.png)
+
+The dial still tells the time: a red notch for the hour, a cyan one for the minute, the sweep does the seconds. Only program names appear. The login lines are read from the system journal (your user has to be allowed to: groups `adm`, `wheel` or `systemd-journal`) but never shown, and the devices the radar has met are stored as salted hashes. `SENTINEL="no"` turns the intrusion part off.
+
 ### Alert mode
 
-If the CPU or the RAM goes over 85%, or the CPU or GPU reaches 95 °C, and it stays there for 3 seconds, the desktop starts to panic. The Biomonitor frame pulses red and its status line tells you why (`!! OVERLOAD // CPU 97%`). `INTRUSION COUNTERMEASURES ARMED` flashes on the wallpaper and the screen edges turn red. The wallpaper glitches every second or two instead of every 7 to 14, and new windows open with a stronger, longer glitch.
+If the CPU or the RAM goes over 85%, or the CPU or GPU reaches 95 °C, and it stays there for 3 seconds, the desktop starts to panic. The Biomonitor frame pulses red and its status line tells you why and who's to blame (`!! OVERLOAD // CPU 97% // FIREFOX`). `INTRUSION COUNTERMEASURES ARMED` flashes on the wallpaper and the screen edges turn red. The wallpaper glitches every second or two instead of every 7 to 14, and new windows open with a stronger, longer glitch.
 
 It ends after 6 seconds of calm. There's a margin so it doesn't flicker on and off around the limit: CPU has to drop 10 points below its threshold, RAM and temperature 5.
 
@@ -220,6 +236,8 @@ It all happens at user level, no `sudo` needed. When it finishes, log out and ba
 | `ALERT_TEMP` | `95` | Temperature in °C, the hotter of CPU and GPU. |
 | `LIVE_TERMINAL` | `yes` | Real, scrambled data in the wallpaper terminal. |
 | `TRACE_MBPS` | `5` | MB/s of traffic that prints `trace program active`. |
+| `SENTINEL` | `yes` | The radar also flags intrusions: USB devices, wrong passwords, SSH logins, new open ports, new devices on your network. |
+| `QUICKHACK` | `yes` | A click on a radar contact can close that program, after a confirmation. |
 | `CYBER_OSD` | `yes` | Quickhack OSD instead of Plasma's. |
 | `SOUND_FX` | `no` | Sound theme and jack-in at session start. |
 | `LOW_POWER_PERCENT` | `20` | Battery level below which animations stop. `0` means never. |
@@ -296,7 +314,7 @@ bash lab/run-lab.sh reactive   # only the reactive HUD
 
 You need Docker, with your user in the `docker` group. Everything ends up in `lab/out/`: numbered screenshots, frames for the GIFs, `install.log`, `effects.txt`, `qmllint.txt` and `plasmashell-errors.txt`.
 
-The reactive run puts a real load on the CPU and streams real traffic from a second container. Battery and TUXEDO Control Center are simulated on a private bus. The journal contains a test message marked as secret, to confirm it never reaches the screen. Results are in `alert.txt`, `mocks.txt` and `reactive.txt`.
+The reactive run puts a real load on the CPU and streams real traffic from a second container. Battery and TUXEDO Control Center are simulated on a private bus. The journal contains a test message marked as secret, to confirm it never reaches the screen. The radar gets named CPU loads, a fake USB keyboard, a wrong sudo password in a fake journal and a server opening a port, then quickhacks a test program (a lab-only hook clicks for it, since a headless Wayland has no mouse). Results are in `alert.txt`, `mocks.txt`, `radar.txt` and `reactive.txt`.
 
 ## What I haven't tested yet
 
@@ -328,7 +346,7 @@ cyberneon-kde/
 ├── cyberneon.conf                 configuration
 ├── kde/
 │   ├── shared/                    animated wallpaper, load and battery state, QML settings
-│   ├── bin/                       helper scripts: bus watcher, live terminal, sounds, TUXEDO
+│   ├── bin/                       helper scripts: threat radar, bus watcher, live terminal, sounds, TUXEDO
 │   ├── layout.js                  HUD layout: panels, widgets, wallpaper
 │   ├── decoration/cyberneon/      QML window frames
 │   ├── wallpaper/                 animated wallpaper plugin
@@ -391,7 +409,8 @@ Some of this took a while to figure out, so I'm leaving it here in case you're b
 - **Shaders in JavaScript KWin effects.** You load them with `effect.addFragmentShader(Effect.MapTexture | Effect.Modulate, "file.frag")` from `contents/shaders/`, and animate them with `{type: Effect.ShaderUniform, fragmentShader: id, uniform: "name"}`. OpenGL core needs `#version 140`, and there's a 1.10 version as well.
 - **Config in KWin effects.** `effect.readConfig` only sees keys declared in `contents/config/main.xml`. Without that file the alert flag always came back false.
 - **Disabling the OSD.** With `[OSD] Enabled=false` in `plasmarc`, Plasma hides its OSD and also stops emitting `osdProgress` and `osdText`, the signals I had planned to listen to. The method calls to `org.kde.osdService` still go through, so `busctl --user monitor` can read them.
-- **No streaming processes in QML.** `cn-bus-watch` works as a long poll, with two overlapping waits so that no event falls between one poll and the next.
+- **No streaming processes in QML.** `cn-bus-watch` works as a long poll, with two overlapping waits so that no event falls between one poll and the next. The radar's login events work the same way (`cn-threats --auth`), and the scan keeps what it compares with in a small file under `$XDG_RUNTIME_DIR`, since every run is a new process.
+- **One radar for two desktops.** `bin/cn-threats` is the same file the Budgie edition imports. Per-program traffic comes from the kernel's TCP byte counters (`ss -i`), read only when the network moves more than 16 KB/s. QUIC has no counters, so the leftover traffic goes to the program holding UDP sockets on port 443. Memory is resident minus shared, otherwise twenty Firefox processes would count the same libraries twenty times.
 - **OSD windows from a widget.** A `PlasmaCore.Dialog` with no `visualParent` loses its position when it's shown again. Anchoring it to an item on the desktop fixes that.
 - **Sneaky QML names.** A property called `onSomething` gets read as a signal handler, and `state` already exists on `Item`. Both give you wrong values with no error. A property called `left` in a `PlasmoidItem` is worse, because the widget refuses to load ("Cannot override FINAL property").
 - **`parent` inside `ShapePath`.** It doesn't point to the `Shape`. Use an `id`.
@@ -486,7 +505,7 @@ Nel gioco ogni informazione ha il suo posto fisso, e le analisi UX dell'interfac
 | Zona | Nel gioco | In CyberNeon |
 |---|---|---|
 | In alto a sinistra | salute, livello, risorse | Un pannello fluttuante con il logo (apre le app) e i desktop virtuali, più il **Biomonitor**. Il badge "livello" sono le ore di accensione, la barra a segmenti è la RAM libera, i blocchi la CPU libera, poi disco, rete e il tuo nome. |
-| In alto a destra | minimappa con l'ora, missione attiva | Un pannello fluttuante con area di notifica, orologio e blocco/uscita, più il **Radar**: il fascio segue i secondi, un rombo rosso segna le ore e un quadrato ciano i minuti. Sotto, il tracker considera la finestra attiva il tuo obiettivo e le altre aperte i sotto-obiettivi. |
+| In alto a destra | minimappa con l'ora, missione attiva | Un pannello fluttuante con area di notifica, orologio e blocco/uscita, più il **radar delle minacce**: i programmi che pesano sul PC sono contatti, più pesano più stanno vicino al centro, le frecce sul bordo sono programmi che muovono dati e i rombi rossi sono intrusioni ([dettagli](#radar-delle-minacce)). Sotto, il tracker considera la finestra attiva il tuo obiettivo e le altre aperte i sotto-obiettivi. |
 | In basso al centro | slot delle abilità | Una dock fluttuante grande quanto le sue icone, con gli slot ad angoli tagliati. Quello attivo diventa una piastra ciano. |
 | In basso a destra | contatore delle munizioni | Il **Chrono**. L'ora è il contatore, i secondi rimasti sono la riserva e 60 tacche si svuotano durante il minuto, con le ultime dieci in rosso. Fa un glitch ogni 12 secondi, ogni 2,5 durante l'allerta. |
 | In basso a sinistra | messaggi e chiamate | Qui arrivano le notifiche, su vetro con il bordo rosso. |
@@ -502,9 +521,25 @@ Nel gioco ogni informazione ha il suo posto fisso, e le analisi UX dell'interfac
 | ![Modalità allerta](docs/kde-alert.png) **Modalità allerta** | ![Terminale live](docs/kde-live-terminal.png) **Terminale live** sullo sfondo |
 | ![OSD Quickhack](docs/kde-osd.png) **OSD Quickhack** | ![Batteria](docs/kde-battery.png) **CELL CHARGE** e profilo TUXEDO (entrambi simulati nel laboratorio) |
 
+### Radar delle minacce
+
+![Radar delle minacce](docs/kde-radar.png)
+
+Nel gioco la minimappa ti dice chi hai intorno e quanto è pericoloso. Qui i nemici sono quello che rallenta il PC, usa la tua rete o prova a entrare.
+
+- **Contatti.** Ogni programma con un carico vero è un puntino, e tutti i processi di un programma contano come uno solo: i venti processi di Firefox sono un contatto. Più è vicino al centro, più pesa: un core della CPU intero o il 30% della RAM lo fanno diventare rosso. I puntini più grandi usano più memoria, il fascio li accende quando ci passa sopra, e quelli gialli e rossi hanno accanto nome e carico, tipo `FIREFOX 92%`. Se non gira niente di pesante il radar è vuoto e scrive `ZONE CLEAR`.
+- **Traffico.** Un programma che scarica ha una freccia verso il centro, uno che carica una freccia verso fuori, e più va veloce più la freccia è lunga. La riga sotto il radar dice chi scarica e chi carica di più.
+- **Sentinella.** Un rombo rosso con una sigla (`USB`, `AUTH`, `SSH`, `PORT`, `LAN`) lampeggia sul bordo per un minuto e la riga sotto il radar dice cosa è successo e a che ora: un dispositivo USB collegato (una chiavetta che si presenta anche come tastiera viene segnalata come tastiera, il trucco delle "BadUSB"), una password sbagliata per sudo, su, il blocco schermo o il login, un accesso SSH riuscito o fallito, un programma che apre una porta verso la rete, un dispositivo che compare per la prima volta nella tua rete.
+- **L'allerta dice chi è il colpevole**, vedi sotto.
+- **Quickhack.** Clicchi su un contatto e si apre un pannello con due quickhack: **OVERLOAD** chiude il programma nel modo normale, così un browser fa in tempo a salvare la sessione, e **FLATLINE** chiude con la forza tutti i suoi processi, perdendo il lavoro non salvato. Non succede niente finché non premi **UPLOAD** per confermare, poi una barra di upload si riempie e il programma va giù. La sessione del desktop (gestore delle finestre, pannello, audio, l'HUD) e i processi di altri utenti risultano **PROTECTED** e non si toccano. `QUICKHACK="no"` lo spegne.
+
+![Quickhack](docs/kde-quickhack.png)
+
+Il quadrante segna ancora l'ora: una tacca rossa per le ore, una ciano per i minuti, e il fascio fa i secondi. Si vedono solo i nomi dei programmi. Le righe di login le legge dal journal di sistema (il tuo utente deve poterlo fare: gruppi `adm`, `wheel` o `systemd-journal`) ma non le mostra mai, e i dispositivi che il radar ha già visto sono salvati come hash con sale. `SENTINEL="no"` spegne la parte delle intrusioni.
+
 ### Modalità allerta
 
-Se CPU o RAM superano l'85%, oppure CPU o GPU arrivano a 95 °C, e la situazione dura 3 secondi, il desktop va in crisi. Il bordo del Biomonitor pulsa di rosso e la riga di stato ti dice il motivo (`!! OVERLOAD // CPU 97%`). Sullo sfondo lampeggia `INTRUSION COUNTERMEASURES ARMED` e i bordi dello schermo diventano rossi. I glitch dello sfondo arrivano ogni secondo o due invece che ogni 7-14, e le finestre nuove si aprono con un glitch più forte e più lungo.
+Se CPU o RAM superano l'85%, oppure CPU o GPU arrivano a 95 °C, e la situazione dura 3 secondi, il desktop va in crisi. Il bordo del Biomonitor pulsa di rosso e la riga di stato ti dice il motivo e di chi è la colpa (`!! OVERLOAD // CPU 97% // FIREFOX`). Sullo sfondo lampeggia `INTRUSION COUNTERMEASURES ARMED` e i bordi dello schermo diventano rossi. I glitch dello sfondo arrivano ogni secondo o due invece che ogni 7-14, e le finestre nuove si aprono con un glitch più forte e più lungo.
 
 Finisce dopo 6 secondi di calma. C'è un margine, così non si accende e spegne di continuo attorno al limite: la CPU deve scendere di 10 punti sotto la soglia, RAM e temperatura di 5.
 
@@ -650,6 +685,8 @@ Si fa tutto a livello utente, senza `sudo`. Alla fine esci e rientra nella sessi
 | `ALERT_TEMP` | `95` | Temperatura in °C, la più alta tra CPU e GPU. |
 | `LIVE_TERMINAL` | `yes` | Dati reali e camuffati nel terminale dello sfondo. |
 | `TRACE_MBPS` | `5` | MB/s di traffico oltre i quali compare `trace program active`. |
+| `SENTINEL` | `yes` | Il radar segnala anche le intrusioni: dispositivi USB, password sbagliate, accessi SSH, nuove porte aperte, nuovi dispositivi in rete. |
+| `QUICKHACK` | `yes` | Un clic su un contatto del radar può chiudere quel programma, dopo una conferma. |
 | `CYBER_OSD` | `yes` | OSD Quickhack al posto di quello di Plasma. |
 | `SOUND_FX` | `no` | Tema sonoro e jack-in all'avvio della sessione. |
 | `LOW_POWER_PERCENT` | `20` | Livello di batteria sotto il quale le animazioni si fermano. `0` vuol dire mai. |
@@ -726,7 +763,7 @@ bash lab/run-lab.sh reactive   # solo l'HUD reattivo
 
 Serve Docker, con il tuo utente nel gruppo `docker`. Trovi tutto in `lab/out/`: screenshot numerati, fotogrammi per le GIF, `install.log`, `effects.txt`, `qmllint.txt` e `plasmashell-errors.txt`.
 
-Il giro reattivo mette un carico vero sulla CPU e fa arrivare traffico vero da un secondo container. Batteria e TUXEDO Control Center sono simulati su un bus privato. Nel journal c'è un messaggio di prova marcato come segreto, per controllare che non arrivi mai sullo schermo. I risultati sono in `alert.txt`, `mocks.txt` e `reactive.txt`.
+Il giro reattivo mette un carico vero sulla CPU e fa arrivare traffico vero da un secondo container. Batteria e TUXEDO Control Center sono simulati su un bus privato. Nel journal c'è un messaggio di prova marcato come segreto, per controllare che non arrivi mai sullo schermo. Il radar riceve carichi sulla CPU con un nome, una finta tastiera USB, una password di sudo sbagliata in un finto journal e un server che apre una porta, poi fa un quickhack a un programma di prova (clicca per lui un aggancio che esiste solo nel laboratorio, perché un Wayland senza schermo non ha mouse). I risultati sono in `alert.txt`, `mocks.txt`, `radar.txt` e `reactive.txt`.
 
 ## Cosa non ho ancora provato
 
@@ -758,7 +795,7 @@ cyberneon-kde/
 ├── cyberneon.conf                 configurazione
 ├── kde/
 │   ├── shared/                    sfondo animato, stato di carico e batteria, impostazioni QML
-│   ├── bin/                       script di supporto: bus, terminale live, suoni, TUXEDO
+│   ├── bin/                       script di supporto: radar delle minacce, bus, terminale live, suoni, TUXEDO
 │   ├── layout.js                  layout dell'HUD: pannelli, widget, sfondo
 │   ├── decoration/cyberneon/      cornici delle finestre in QML
 │   ├── wallpaper/                 plugin dello sfondo animato
@@ -821,7 +858,8 @@ Alcune di queste cose hanno richiesto un po' per venirne a capo, quindi le lasci
 - **Shader negli effetti KWin in JavaScript.** Si caricano con `effect.addFragmentShader(Effect.MapTexture | Effect.Modulate, "file.frag")` da `contents/shaders/` e si animano con `{type: Effect.ShaderUniform, fragmentShader: id, uniform: "nome"}`. OpenGL core vuole `#version 140`, e c'è anche una versione 1.10.
 - **Configurazione degli effetti KWin.** `effect.readConfig` vede solo le chiavi dichiarate in `contents/config/main.xml`. Senza quel file il flag dell'allerta risultava sempre falso.
 - **Spegnere l'OSD.** Con `[OSD] Enabled=false` in `plasmarc`, Plasma nasconde il suo OSD ma smette anche di emettere `osdProgress` e `osdText`, i segnali che volevo ascoltare. Le chiamate a `org.kde.osdService` però passano lo stesso, e `busctl --user monitor` riesce a leggerle.
-- **QML non ha processi in streaming.** `cn-bus-watch` funziona a long poll, con due attese sfalsate perché nessun evento cada tra una lettura e l'altra.
+- **QML non ha processi in streaming.** `cn-bus-watch` funziona a long poll, con due attese sfalsate perché nessun evento cada tra una lettura e l'altra. Gli eventi di login del radar funzionano allo stesso modo (`cn-threats --auth`), e la scansione tiene quello con cui confrontarsi in un piccolo file sotto `$XDG_RUNTIME_DIR`, visto che ogni lettura è un processo nuovo.
+- **Un radar per due desktop.** `bin/cn-threats` è lo stesso file che importa l'edizione Budgie. Il traffico per programma arriva dai contatori di byte TCP del kernel (`ss -i`), letti solo quando la rete muove più di 16 KB/s. QUIC non ha contatori, quindi il traffico che avanza va al programma che ha socket UDP sulla porta 443. La memoria è quella residente meno la parte condivisa, altrimenti venti processi di Firefox conterebbero venti volte le stesse librerie.
 - **Finestre OSD da un widget.** Un `PlasmaCore.Dialog` senza `visualParent` perde la posizione quando viene rimostrato. Si risolve ancorandolo a un elemento sul desktop.
 - **Nomi traditori in QML.** Una proprietà chiamata `onQualcosa` viene presa per un gestore di segnale, e `state` esiste già su `Item`. In entrambi i casi ottieni valori sbagliati senza nessun errore. Una proprietà chiamata `left` in un `PlasmoidItem` è anche peggio, perché il widget non si carica ("Cannot override FINAL property").
 - **`parent` dentro `ShapePath`.** Non punta allo `Shape`. Meglio usare un `id`.

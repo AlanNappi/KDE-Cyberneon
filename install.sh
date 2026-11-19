@@ -219,6 +219,8 @@ var TRACE_MBPS = $(num "${TRACE_MBPS:-}" 5);
 var CYBER_OSD = $OSD_ON;
 var SOUND_FX = $(yn "${SOUND_FX:-no}");
 var LOW_POWER = $(num "${LOW_POWER_PERCENT:-}" 20);
+var SENTINEL = $(yn "${SENTINEL:-yes}");
+var QUICKHACK = $(yn "${QUICKHACK:-yes}");
 JS
 }
 rm -rf "$DATA/bin"; mkdir -p "$DATA/bin"; cp "$REPO"/kde/bin/cn-* "$DATA/bin/"; chmod +x "$DATA"/bin/cn-*

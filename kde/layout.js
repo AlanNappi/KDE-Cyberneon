@@ -4,7 +4,7 @@
 //
 // A game-HUD style desktop in four zones (original artwork, real system data):
 //   top-left    : floating badge panel (logo launcher, workspaces) + Biomonitor widget
-//   top-right   : floating panel (system tray, clock, lock/logout) + Radar clock / objective tracker widget
+//   top-right   : floating panel (system tray, clock, lock/logout) + threat Radar / objective tracker widget
 //   bottom      : floating dock, centred, sized to its icons (quick slots)
 //   bottom-right: Chrono counter widget          (notifications pop up bottom-left: plasmanotifyrc)
 // Panels are glass with blur behind and a neon glow (Plasma theme shadows).
@@ -72,7 +72,7 @@ if (desk) {
     });
     var freeH = geo.height - (BAR + 2 * GAP) - (DOCK + 2 * GAP);
     desk.addWidget("org.cyberneon.biomonitor", 12, 2, 560, 104);
-    desk.addWidget("org.cyberneon.radar", geo.width - 340 - 16, 4, 340, 470);
+    desk.addWidget("org.cyberneon.radar", geo.width - 340 - 16, 4, 340, 540);
     desk.addWidget("org.cyberneon.chrono", geo.width - 420 - 20, freeH - 160 - 8, 420, 160);
 }
 

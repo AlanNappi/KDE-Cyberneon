@@ -17,6 +17,7 @@ call() { gdbus call --session --dest "$1" --object-path "$2" --method "$3" "${@:
 mkdir -p /tmp/stubs
 cat > /tmp/stubs/journalctl <<'EOF'
 #!/bin/bash
+case " $* " in *" -f "*) exec tail -n 0 -F /tmp/auth.jsonl ;; esac      # the radar's login-event follower
 now=$(date +%s)
 for p in "6 kwin_wayland" "4 NetworkManager" "3 sshd" "6 systemd"; do
     set -- $p; now=$((now+1))
@@ -25,6 +26,13 @@ done
 EOF
 printf '#!/bin/bash\necho "$(date +%%T) $*" >> /out/sfx.log\n' > /tmp/stubs/paplay
 chmod +x /tmp/stubs/*; export PATH=/tmp/stubs:$PATH
+# threat radar test doubles: a USB tree the lab can plug devices into, a login journal it can write to, named loads,
+# and one known neighbour on the network (the gateway) before the first scan
+export CYBERNEON_USB_ROOT=/tmp/usb; mkdir -p /tmp/usb/usb1 /tmp/usb/1-1; echo 2 > /tmp/usb/1-1/devnum; touch /tmp/auth.jsonl
+cp /usr/bin/yes /tmp/icebreaker
+printf 'import sys, time\nd = float(sys.argv[1])\nwhile True:\n    t = time.monotonic()\n    while time.monotonic() - t < d * 0.1:\n        pass\n    time.sleep((1 - d) * 0.1)\n' > /tmp/datamine.py
+cp /tmp/datamine.py /tmp/tracer.py
+python3 -c "import socket; s=socket.socket(); s.settimeout(1); s.connect_ex(('$(ip route | awk '/^default/{print $3; exit}')', 9))" 2>/dev/null
 
 log "starting kwin_wayland (virtual 1920x1080)"
 QT_LOGGING_RULES="kwin_scripting.debug=true;js.debug=true" kwin_wayland --virtual --width 1920 --height 1080 --xwayland --socket wayland-cyberneon --no-lockscreen \
@@ -75,6 +83,46 @@ while time.time() < e: c.recv(1 << 20)" &
     shot 12-live-terminal
     { echo "--- cn-netlog"; ~/.local/share/cyberneon/bin/cn-netlog; } > "$OUT/netlog.txt" 2>&1
 
+    log "reactive: threat radar (contacts, traffic, intrusions)"
+    local loads=()
+    /tmp/icebreaker > /dev/null & loads+=($!)
+    python3 /tmp/datamine.py 0.62 & loads+=($!)
+    python3 /tmp/tracer.py 0.3 & loads+=($!)
+    python3 -m http.server 8099 --bind 0.0.0.0 > /dev/null 2>&1 & loads+=($!)
+    python3 -c "
+import socket, time, os
+c = socket.create_connection((os.environ['LAB_PEER'], 8443)); e = time.time() + 40
+while time.time() < e: c.recv(1 << 20)" & loads+=($!)
+    sleep 14
+    mkdir -p /tmp/usb/1-2 /tmp/usb/1-2:1.0 /tmp/usb/1-2:1.1; echo 3 > /tmp/usb/1-2/devnum
+    echo 08 > /tmp/usb/1-2:1.0/bInterfaceClass; echo 50 > /tmp/usb/1-2:1.0/bInterfaceProtocol
+    echo 03 > /tmp/usb/1-2:1.1/bInterfaceClass; echo 01 > /tmp/usb/1-2:1.1/bInterfaceProtocol
+    sleep 6
+    echo '{"SYSLOG_IDENTIFIER":"sudo","MESSAGE":"pam_unix(sudo:auth): authentication failure; logname=netrunner ruser=SECRETUSER rhost=203.0.113.9"}' >> /tmp/auth.jsonl
+    sleep 4
+    shot 25-radar
+    mkdir -p "$OUT/gif"; for i in $(seq -w 1 40); do spectacle -b -n -f -o "$OUT/gif/radar-$i.png" >/dev/null 2>&1; done
+    { echo "--- what the radar widget reads (same script, separate state)"
+      st=/tmp/radar-check.json; rm -f $st
+      ~/.local/share/cyberneon/bin/cn-threats --state $st --no-sentinel > /dev/null; sleep 3
+      ~/.local/share/cyberneon/bin/cn-threats --state $st --no-sentinel
+      echo "--- culprit file: $(cat "$XDG_RUNTIME_DIR/cyberneon-culprit.json" 2>&1)"
+      echo "--- auth helpers running: $(pgrep -fc 'cn-threats --auth')"
+      echo "--- secrets in the logs: $(grep -l 'SECRETUSER\|203.0.113.9' "$OUT"/plasmashell*.log 2>/dev/null)"; } > "$OUT/radar.txt" 2>&1
+
+    log "reactive: quickhack on the icebreaker contact (driven by the widget's lab hook: no mouse on a headless Wayland)"
+    local cfg=~/.local/share/plasma/plasmoids/org.cyberneon.radar/contents/ui/cnconfig.js
+    echo 'var LAB_QUICKHACK = true;' >> "$cfg"
+    kquitapp6 plasmashell >/dev/null 2>&1; sleep 3
+    plasmashell > "$OUT/plasmashell-hack.log" 2>&1 &
+    for i in $(seq -w 1 34); do spectacle -b -n -f -o "$OUT/gif/hack-$i.png" >/dev/null 2>&1; sleep 0.4; done
+    { echo "--- quickhack"
+      if ps -o stat= -p "${loads[0]}" 2>/dev/null | grep -qv Z; then echo "icebreaker still running: FAIL"; else echo "icebreaker closed by OVERLOAD: PASS"; fi
+      echo "protected: $(~/.local/share/cyberneon/bin/cn-threats --quickhack plasmashell)"
+      echo "missing: $(~/.local/share/cyberneon/bin/cn-threats --quickhack no-such-program)"; } >> "$OUT/radar.txt" 2>&1
+    sed -i '/LAB_QUICKHACK/d' "$cfg"
+    kill "${loads[@]}" 2>/dev/null; wait "${loads[@]}" 2>/dev/null
+
     log "reactive: Quickhack OSD"
     osd volumeChanged 42 100; sleep 0.8; shot 13-osd-volume
     sleep 2.2; shot 13-osd-hidden
@@ -92,7 +140,7 @@ while time.time() < e: c.recv(1 << 20)" &
     log "reactive: alert mode (real CPU load at lowest priority)"
     local pids=() n
     mkdir -p "$OUT/gif"
-    for n in $(seq "$(nproc)"); do nice -n 19 sh -c 'while :; do :; done' & pids+=($!); done
+    for n in $(seq "$(nproc)"); do nice -n 19 /tmp/icebreaker > /dev/null & pids+=($!); done
     sleep 9
     shot 18-alert
     for i in 1 2 3 4 5 6; do spectacle -b -n -f -o "$OUT/gif/alert-$i.png" >/dev/null 2>&1; done
@@ -149,7 +197,7 @@ while time.time() < e: c.recv(1 << 20)" &
 
 if [ "${LAB_MODE:-full}" = reactive ]; then
     reactive_tests
-    grep -iE "cyberneon|qml.*error|TypeError|ReferenceError" "$OUT/plasmashell.log" "$OUT/plasmashell2.log" | tail -40 > "$OUT/plasmashell-errors.txt"
+    grep -iE "cyberneon|qml.*error|TypeError|ReferenceError" "$OUT/plasmashell.log" "$OUT/plasmashell-hack.log" "$OUT/plasmashell2.log" 2>/dev/null | tail -40 > "$OUT/plasmashell-errors.txt"
     chmod -R a+rwX "$OUT"; log "done (reactive)"; exit 0
 fi
 
@@ -221,6 +269,6 @@ log "qmllint"
 /usr/lib/qt6/bin/qmllint "$HOME"/cyberneon-kde/kde/plasmoids/*/contents/ui/main.qml \
     "$HOME"/cyberneon-kde/kde/shared/*.qml "$HOME"/cyberneon-kde/kde/tabbox/cyberneon/contents/ui/main.qml \
     "$HOME"/cyberneon-kde/kde/sddm/cyberneon/Main.qml > "$OUT/qmllint.txt" 2>&1; echo "qmllint exit: $?" >> "$OUT/qmllint.txt"
-grep -iE "cyberneon|qml.*error|TypeError|ReferenceError" "$OUT/plasmashell.log" "$OUT/plasmashell2.log" | tail -40 > "$OUT/plasmashell-errors.txt"
+grep -iE "cyberneon|qml.*error|TypeError|ReferenceError" "$OUT/plasmashell.log" "$OUT/plasmashell-hack.log" "$OUT/plasmashell2.log" 2>/dev/null | tail -40 > "$OUT/plasmashell-errors.txt"
 chmod -R a+rwX "$OUT"
 log "done"
